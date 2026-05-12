@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RICAIP Digital Twin</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- ── Top bar ──────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">RICAIP <span>Digital Twin</span></div>
+  <span id="mode-badge" class="mode-badge mode-A">MODE A</span>
+  <span id="plan-status" class="plan-status ps-idle">IDLE</span>
+  <div class="spacer"></div>
+  <div class="controls">
+    <select id="mode-select" class="btn" title="Execution mode">
+      <option value="A">Mode A — R&amp;D (file-based)</option>
+      <option value="B">Mode B — Planning (dry-run)</option>
+      <option value="C">Mode C — Real OPC UA</option>
+    </select>
+    <button id="btn-load"  class="btn">⬇ Load Plan</button>
+    <button id="btn-start" class="btn btn-primary" disabled>▶ Start</button>
+    <button id="btn-pause" class="btn btn-warn"    disabled>⏸ Pause</button>
+    <button id="btn-reset" class="btn btn-danger"  disabled>↺ Reset</button>
+    <span id="ws-dot" class="ws-dot" title="WebSocket status"></span>
+  </div>
+</header>
+
+<!-- ── Main ─────────────────────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- Left: Robot states -->
+  <div class="panel">
+    <div class="panel-title">Robots</div>
+    <div class="panel-body" id="robots-panel">
+      <p class="empty-msg">Connecting…</p>
+    </div>
+    <div class="workcell-bar">
+      <span id="estop-ind"   class="indicator active-ind" title="Click to toggle E-Stop">
+        <span class="ind-dot"></span>E-Stop OK
+      </span>
+      <span id="conveyor-ind" class="indicator active-ind" title="Click to toggle conveyor">
+        <span class="ind-dot"></span>Conveyor Running
+      </span>
+    </div>
+  </div>
+
+  <!-- Center: Plan steps -->
+  <div class="panel" style="border-right:1px solid var(--border)">
+    <div class="panel-title">Assembly Plan — MAZE_106</div>
+    <div class="progress-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-text" id="progress-text">—</div>
+    </div>
+    <div class="panel-body" id="plan-panel" style="padding:0">
+      <p class="empty-msg">Load a plan to begin.</p>
+    </div>
+  </div>
+
+  <!-- Right: Active op + event log -->
+  <div class="panel" style="border-right:none">
+    <div class="panel-title">Operation Details</div>
+    <div class="panel-body" style="display:flex;flex-direction:column;gap:0;padding:10px">
+      <!-- Active operation card -->
+      <div id="active-op"></div>
+      <!-- Event log -->
+      <div class="event-log">
+        <div class="active-op-title">Event Log</div>
+        <div class="log-body" id="log-body"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
