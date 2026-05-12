@@ -95,4 +95,14 @@ If ANY subagent returned FAIL:
 If all PASS:
 - Exit with code 0
 - Print READY TO DEPLOY
-- Log result to `.claude/deploy-history.log`
+- Log result to `.claude/logs/deploy-history.log` with format:
+  ```
+  <ISO-timestamp>  DEPLOY_PASS  branch=<branch>  commit=<sha>  tests=PASS  security=PASS  env=PASS
+  ```
+
+If ANY FAIL:
+- Log to `.claude/logs/deploy-history.log`:
+  ```
+  <ISO-timestamp>  DEPLOY_FAIL  branch=<branch>  commit=<sha>  failed=<check-names>
+  ```
+- Also append to `.claude/logs/errors.log`

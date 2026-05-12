@@ -10,19 +10,23 @@ Launch two subagents simultaneously using the Task tool:
 
 **Subagent A — Web Research:**
 ```
-Search for recent (last 10 years) articles, blog posts, and documentation on: $ARGUMENTS
-Use the brave-search MCP tool (brave_web_search) with at least 3 different query variants.
-For each result collect: title, URL, date, 2-sentence summary, relevance score (1-10).
-Return structured JSON array.
+TOKEN BUDGET: Return only JSON. No prose. No markdown outside the JSON block.
+
+Search for recent (last 10 years) articles on: $ARGUMENTS
+Use brave_web_search MCP with 3 query variants. Collect top-5 results only.
+Return a JSON array — each object: {title, url, date, summary (≤120 chars), relevance (1-10)}.
+Omit any field you cannot populate. No explanation text outside the array.
 ```
 
 **Subagent B — Academic Research:**
 ```
-Search arXiv for papers on: $ARGUMENTS
-Use research-mcp tool fetch_arxiv with query derived from the topic.
-For each paper: extract title, authors, abstract, arXiv ID, published date.
-Use summarize_paper tool to get a 3-sentence summary of each.
-Return top-5 papers ranked by citation potential and recency.
+TOKEN BUDGET: Return only JSON. No prose. No markdown outside the JSON block.
+
+Search arXiv for: $ARGUMENTS
+Use fetch_arxiv(query, compact=true) — this omits abstracts to save tokens.
+For the top-5 results by relevance, call summarize_paper() to get oneLineSummary.
+Return a JSON array: [{id, title, authors, published, url, oneLineSummary, relevance_estimate}]
+No other text.
 ```
 
 ### Step 2 — Merge & Deduplicate
@@ -65,7 +69,23 @@ Date: <today>
 Stored in ./data/research.db → table: findings
 ```
 
+### Step 5 — Log Session
+
+Append a structured entry to `.claude/logs/agent.log`:
+```
+<timestamp>  RESEARCH_COMPLETE  topic="$ARGUMENTS"  results=<count>  duration=<seconds>s
+```
+
+Also append a human-readable summary to `.claude/session-notes.md`:
+```
+## Research: $ARGUMENTS — <date>
+- Sources: N web, N arXiv
+- Top finding: <title>
+- DB: ./data/research.db → findings table
+```
+
 ## Notes
 - If brave-search MCP is unavailable, fall back to WebSearch tool
 - Minimum: 3 web sources + 2 papers before declaring complete
 - Always include full citations — no citation → not counted
+- Log every session regardless of success/failure

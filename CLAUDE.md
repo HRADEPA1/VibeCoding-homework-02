@@ -11,6 +11,19 @@ Your role: solve complex software engineering and research tasks end-to-end, wit
 
 ---
 
+## 💰 Token Budget — Mandatory Rules
+
+Conserve context tokens at every level. Violations waste plan quota.
+
+1. **Subagent outputs must be JSON** — never return prose from a subagent. Use `TOKEN BUDGET:` header in every spawn prompt.
+2. **Cap subagent results** — max 5 web results, 5 papers, 30 review issues per subagent call.
+3. **Use compact MCP modes** — always pass `compact=true` to `fetch_arxiv` and `list_findings` unless you specifically need abstracts.
+4. **No pretty-printing** — never pass `null, 2` to `JSON.stringify` in MCP responses (adds ~30% whitespace tokens).
+5. **`autoCompact` is on** — the harness will auto-compact context when approaching the limit. Do not fight it.
+6. **Do not re-read files you already have** — check your current context before issuing a Read tool call.
+
+---
+
 ## 🧠 Core Principles
 
 1. **Think before acting** — reason through the approach before issuing shell commands or edits.

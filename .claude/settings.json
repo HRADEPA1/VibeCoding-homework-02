@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json.schemastore.org/claude-settings.json",
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
 
   "mcpServers": {
 
@@ -50,7 +50,10 @@
       "args": ["./mcp-servers/research-mcp/server.js"],
       "env": {
         "ARXIV_BASE_URL": "https://export.arxiv.org/api/query",
-        "MAX_RESULTS": "20"
+        "MAX_RESULTS": "10",
+        "ABSTRACT_MAX_CHARS": "800",
+        "LOG_FILE": "./data/logs/research-mcp.log",
+        "LOG_LEVEL": "info"
       },
       "description": "Custom MCP: arXiv paper fetching, summarization, structured finding storage"
     }
@@ -65,11 +68,15 @@
       "Bash(npx:*)",
       "Bash(node:*)",
       "Bash(python:*)",
+      "Bash(python3:*)",
       "Bash(uv:*)",
       "Bash(rg:*)",
       "Bash(fd:*)",
       "Bash(jq:*)",
       "Bash(curl:*)",
+      "Bash(mkdir:*)",
+      "Bash(echo:*)",
+      "Bash(date:*)",
       "Read(**)",
       "Write(src/**)",
       "Write(docs/**)",
@@ -78,7 +85,9 @@
       "Edit(src/**)",
       "Edit(docs/**)",
       "Edit(CLAUDE.md)",
+      "Edit(mcp-servers/**)",
       "WebFetch(*)",
+      "WebSearch(*)",
       "mcp__filesystem__*",
       "mcp__github__*",
       "mcp__brave-search__*",
@@ -101,7 +110,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[HOOK] Bash: '\"$CLAUDE_TOOL_INPUT\" >> .claude/session-notes.md"
+            "command": "jq -r '\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" + \"\\tPRE\\tBash\\t\" + (.tool_input.command // \"unknown\")' >> .claude/logs/agent.log 2>/dev/null; true"
           }
         ]
       },
@@ -110,18 +119,87 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[HOOK] Write: '\"$CLAUDE_TOOL_INPUT\" >> .claude/session-notes.md"
+            "command": "jq -r '\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" + \"\\tPRE\\tWrite\\t\" + (.tool_input.file_path // \"unknown\")' >> .claude/logs/agent.log 2>/dev/null; true"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" + \"\\tPRE\\tEdit\\t\" + (.tool_input.file_path // \"unknown\")' >> .claude/logs/agent.log 2>/dev/null; true"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__research-mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" + \"\\tPRE\\tMCP-research\\t\" + (.tool_name // \"unknown\")' >> .claude/logs/agent.log 2>/dev/null; true"
           }
         ]
       }
     ],
+
     "PostToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "if [ \"$CLAUDE_TOOL_EXIT_CODE\" != \"0\" ]; then echo '[HOOK][ERROR] Bash failed at '$(date -u +%Y-%m-%dT%H:%M:%SZ) >> .claude/session-notes.md; fi"
+            "command": "jq -r '\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" + \"\\tPOST\\tBash\\tOK\"' >> .claude/logs/agent.log 2>/dev/null; true"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__research-mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" + \"\\tPOST\\tMCP-research\\tOK\"' >> .claude/logs/agent.log 2>/dev/null; true"
+          }
+        ]
+      }
+    ],
+
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" + \"\\tERROR\\tBash\\t\" + (.tool_input.command // \"unknown\")' | tee -a .claude/logs/agent.log >> .claude/logs/errors.log 2>/dev/null; true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" + \"\\tERROR\\tWrite\\t\" + (.tool_input.file_path // \"unknown\")' >> .claude/logs/errors.log 2>/dev/null; true"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__research-mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" + \"\\tERROR\\tMCP-research\\t\" + (.tool_name // \"unknown\")' >> .claude/logs/errors.log 2>/dev/null; true"
+          }
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s\\tSESSION_END\\tClaude session finished\\n' \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> .claude/logs/agent.log 2>/dev/null; true"
           }
         ]
       }
@@ -134,5 +212,6 @@
   },
 
   "includeCoAuthoredBy": true,
-  "cleanupPeriodDays": 30
+  "cleanupPeriodDays": 30,
+  "autoCompact": true
 }

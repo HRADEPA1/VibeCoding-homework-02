@@ -16,27 +16,16 @@ Auto-detect input type:
 ### Spawn Subagent — Code Intelligence
 
 ```
-Analyze the codebase at $ARGUMENTS:
+TOKEN BUDGET: Return a single JSON object. No prose outside the object.
 
-1. STRUCTURE ANALYSIS
-   - Count files, lines, functions, classes per module
-   - Identify the top-level architecture pattern (MVC, layered, hexagonal, etc.)
-   - Map import/dependency graph (which modules depend on what)
+Analyze $ARGUMENTS:
+1. structure: {files, lines, functions, classes, pattern} — counts only, no lists
+2. complexity: top-5 functions by cyclomatic complexity [{file,fn,score}]
+3. hotspots: top-5 files by git churn (git log --since=90.days) [{file,changes}]
+4. deps: [{name,version,vuln:true|false}] — flag vulnerable only
+5. todos: count of TODO/FIXME per file, top-5 [{file,count}]
 
-2. COMPLEXITY METRICS
-   - Find top-10 most complex functions (cyclomatic complexity)
-   - Find top-10 largest files
-   - Identify dead code (unreachable functions/imports)
-
-3. HOTSPOTS
-   - Files changed most often in git log (last 90 days): git log --since=90.days --name-only --pretty=format: | sort | uniq -c | sort -rn | head -20
-   - Files with most TODO/FIXME comments
-
-4. DEPENDENCY HEALTH
-   - List all external dependencies with versions
-   - Flag any with known vulnerabilities (check npm audit / pip-audit)
-
-Output: structured JSON + markdown summary
+All string values ≤ 60 chars. No arrays longer than specified caps.
 ```
 
 ---

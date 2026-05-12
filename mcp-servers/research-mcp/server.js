@@ -21,17 +21,44 @@ import fetch from "node-fetch";
 import { XMLParser } from "fast-xml-parser";
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const ARXIV_BASE = process.env.ARXIV_BASE_URL ?? "https://export.arxiv.org/api/query";
 const MAX_RESULTS = parseInt(process.env.MAX_RESULTS ?? "10", 10);
-const DB_PATH = process.env.DB_PATH ?? path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../data/research.db"
-);
+const DB_PATH = process.env.DB_PATH ?? path.join(__dirname, "../../data/research.db");
+const LOG_FILE = process.env.LOG_FILE ?? path.join(__dirname, "../../data/logs/research-mcp.log");
+const LOG_LEVEL = (process.env.LOG_LEVEL ?? "info").toLowerCase();
+// Compression: cap abstract length to save tokens sent back to the model
+const ABSTRACT_MAX_CHARS = parseInt(process.env.ABSTRACT_MAX_CHARS ?? "800", 10);
+// Fields returned by list_findings in compact mode (omits full summary text)
+const COMPACT_FIELDS = ["id", "topic", "source_type", "title", "url", "relevance", "fetched_at"];
+
+// ── Logger ────────────────────────────────────────────────────────────────────
+const LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
+const currentLevel = LEVELS[LOG_LEVEL] ?? 1;
+
+fs.mkdirSync(path.dirname(LOG_FILE), { recursive: true });
+const logStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
+
+function log(level, message, data = {}) {
+  if ((LEVELS[level] ?? 1) < currentLevel) return;
+  const entry = JSON.stringify({
+    ts: new Date().toISOString(),
+    level,
+    message,
+    ...data,
+  });
+  logStream.write(entry + "\n");
+  // also emit to stderr so MCP host can capture it
+  process.stderr.write(`[research-mcp][${level.toUpperCase()}] ${message}\n`);
+}
 
 // ── Database setup ────────────────────────────────────────────────────────────
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
 
 db.exec(`
@@ -49,6 +76,8 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_findings_topic ON findings(topic);
 `);
+
+log("info", "Database initialized", { path: DB_PATH });
 
 const insertFinding = db.prepare(`
   INSERT INTO findings (topic, source_type, title, url, authors, summary, relevance, tags)
@@ -71,7 +100,10 @@ async function fetchArxiv(query, maxResults = MAX_RESULTS) {
     sortOrder: "descending",
   });
 
-  const res = await fetch(`${ARXIV_BASE}?${params}`);
+  const url = `${ARXIV_BASE}?${params}`;
+  log("debug", "Fetching arXiv", { query, maxResults, url });
+
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`arXiv API error: ${res.status} ${res.statusText}`);
 
   const xml = await res.text();
@@ -79,17 +111,28 @@ async function fetchArxiv(query, maxResults = MAX_RESULTS) {
   const feed = parsed?.feed;
   const entries = feed?.entry ? (Array.isArray(feed.entry) ? feed.entry : [feed.entry]) : [];
 
-  return entries.map((e) => ({
-    id: e.id?.split("/abs/")[1] ?? e.id,
-    title: e.title?.replace(/\s+/g, " ").trim() ?? "Unknown",
-    authors: Array.isArray(e.author)
-      ? e.author.map((a) => a.name).join(", ")
-      : (e.author?.name ?? "Unknown"),
-    abstract: e.summary?.replace(/\s+/g, " ").trim() ?? "",
-    published: e.published?.slice(0, 10) ?? "",
-    url: `https://arxiv.org/abs/${e.id?.split("/abs/")[1] ?? e.id}`,
-    pdfUrl: `https://arxiv.org/pdf/${e.id?.split("/abs/")[1] ?? e.id}`,
-  }));
+  log("info", "arXiv results fetched", { query, count: entries.length });
+
+  return entries.map((e) => {
+    const rawAbstract = e.summary?.replace(/\s+/g, " ").trim() ?? "";
+    const abstract = rawAbstract.length > ABSTRACT_MAX_CHARS
+      ? rawAbstract.slice(0, ABSTRACT_MAX_CHARS) + "…"
+      : rawAbstract;
+    return {
+      id: e.id?.split("/abs/")[1] ?? e.id,
+      title: e.title?.replace(/\s+/g, " ").trim() ?? "Unknown",
+      // Limit authors to first 3 to avoid long author lists burning tokens
+      authors: (() => {
+        const list = Array.isArray(e.author)
+          ? e.author.map((a) => a.name)
+          : [e.author?.name ?? "Unknown"];
+        return list.length > 3 ? list.slice(0, 3).join(", ") + " et al." : list.join(", ");
+      })(),
+      abstract,
+      published: e.published?.slice(0, 10) ?? "",
+      url: `https://arxiv.org/abs/${e.id?.split("/abs/")[1] ?? e.id}`,
+    };
+  });
 }
 
 function summarizePaper(paper) {
@@ -125,7 +168,7 @@ const TOOLS = [
   {
     name: "fetch_arxiv",
     description:
-      "Search arXiv for academic papers on a given topic. Returns structured paper metadata including title, authors, abstract, and URLs.",
+      "Search arXiv for academic papers on a given topic. Returns structured paper metadata. Abstracts are capped at ABSTRACT_MAX_CHARS to conserve tokens. Set compact=true to omit abstracts entirely.",
     inputSchema: {
       type: "object",
       properties: {
@@ -137,6 +180,11 @@ const TOOLS = [
           type: "number",
           description: "Maximum number of papers to return (default: 10, max: 50)",
           default: 10,
+        },
+        compact: {
+          type: "boolean",
+          description: "If true, omit abstracts from response to save tokens. Use summarize_paper separately for papers of interest.",
+          default: false,
         },
       },
       required: ["query"],
@@ -188,12 +236,17 @@ const TOOLS = [
   },
   {
     name: "list_findings",
-    description: "Retrieve stored research findings from the database, optionally filtered by topic.",
+    description: "Retrieve stored research findings from the database, optionally filtered by topic. Use compact=true (default) to return only key fields without full summary text, saving tokens.",
     inputSchema: {
       type: "object",
       properties: {
         topic: { type: "string", description: "Filter by topic (supports % wildcard)" },
-        limit: { type: "number", default: 20 },
+        limit: { type: "number", default: 10 },
+        compact: {
+          type: "boolean",
+          description: "If true (default), return only id/topic/source_type/title/url/relevance/fetched_at. Set false to include full summary.",
+          default: true,
+        },
       },
     },
   },
@@ -201,68 +254,100 @@ const TOOLS = [
 
 // ── Tool handlers ─────────────────────────────────────────────────────────────
 async function handleTool(name, args) {
-  switch (name) {
-    case "fetch_arxiv": {
-      const papers = await fetchArxiv(args.query, Math.min(args.max_results ?? MAX_RESULTS, 50));
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ query: args.query, count: papers.length, papers }, null, 2),
-          },
-        ],
-      };
+  const startMs = Date.now();
+  log("info", `Tool invoked: ${name}`, { args });
+
+  try {
+    let result;
+
+    switch (name) {
+      case "fetch_arxiv": {
+        const papers = await fetchArxiv(args.query, Math.min(args.max_results ?? MAX_RESULTS, 50));
+        const payload = args.compact
+          ? papers.map(({ abstract: _a, ...rest }) => rest)  // drop abstracts entirely
+          : papers;
+        result = {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ query: args.query, count: payload.length, papers: payload }),
+            },
+          ],
+        };
+        break;
+      }
+
+      case "summarize_paper": {
+        const summary = summarizePaper(args);
+        // Always return compact form — full fields available in DB after store_finding
+        result = {
+          content: [{ type: "text", text: JSON.stringify(summary) }],
+        };
+        break;
+      }
+
+      case "store_finding": {
+        const row = insertFinding.run({
+          topic: args.topic,
+          source_type: args.source_type ?? "arxiv",
+          title: args.title,
+          url: args.url ?? null,
+          authors: args.authors ?? null,
+          summary: args.summary,
+          relevance: args.relevance ?? 5.0,
+          tags: args.tags ?? null,
+        });
+        log("info", "Finding stored", { id: row.lastInsertRowid, topic: args.topic });
+        result = {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ success: true, id: row.lastInsertRowid }),
+            },
+          ],
+        };
+        break;
+      }
+
+      case "list_findings": {
+        const topic = args.topic ? `%${args.topic}%` : "%";
+        const rows = queryFindings.all(topic, args.limit ?? 10);
+        // compact=true by default — strip heavy text fields to save tokens
+        const compact = args.compact !== false;
+        const findings = compact
+          ? rows.map((r) => Object.fromEntries(COMPACT_FIELDS.map((f) => [f, r[f]])))
+          : rows;
+        log("info", "Findings listed", { topic: args.topic, count: findings.length, compact });
+        result = {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ count: findings.length, findings }),
+            },
+          ],
+        };
+        break;
+      }
+
+      default:
+        throw new Error(`Unknown tool: ${name}`);
     }
 
-    case "summarize_paper": {
-      const summary = summarizePaper(args);
-      return {
-        content: [{ type: "text", text: JSON.stringify(summary, null, 2) }],
-      };
-    }
+    log("info", `Tool completed: ${name}`, { durationMs: Date.now() - startMs });
+    return result;
 
-    case "store_finding": {
-      const result = insertFinding.run({
-        topic: args.topic,
-        source_type: args.source_type ?? "arxiv",
-        title: args.title,
-        url: args.url ?? null,
-        authors: args.authors ?? null,
-        summary: args.summary,
-        relevance: args.relevance ?? 5.0,
-        tags: args.tags ?? null,
-      });
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ success: true, id: result.lastInsertRowid }),
-          },
-        ],
-      };
-    }
-
-    case "list_findings": {
-      const topic = args.topic ? `%${args.topic}%` : "%";
-      const rows = queryFindings.all(topic, args.limit ?? 20);
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ count: rows.length, findings: rows }, null, 2),
-          },
-        ],
-      };
-    }
-
-    default:
-      throw new Error(`Unknown tool: ${name}`);
+  } catch (err) {
+    log("error", `Tool failed: ${name}`, { error: err.message, stack: err.stack, durationMs: Date.now() - startMs });
+    return {
+      content: [{ type: "text", text: `Error: ${err.message}` }],
+      isError: true,
+    };
   }
 }
 
 // ── Server setup ──────────────────────────────────────────────────────────────
 const server = new Server(
-  { name: "research-mcp", version: "1.0.0" },
+  { name: "research-mcp", version: "1.1.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -270,17 +355,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }))
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-  try {
-    return await handleTool(name, args ?? {});
-  } catch (err) {
-    return {
-      content: [{ type: "text", text: `Error: ${err.message}` }],
-      isError: true,
-    };
-  }
+  return handleTool(name, args ?? {});
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("[research-mcp] Server running on stdio");
+log("info", "Server started", { transport: "stdio", version: "1.1.0", logFile: LOG_FILE });

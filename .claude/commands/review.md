@@ -26,28 +26,24 @@ npx semgrep --config=auto "$ARGUMENTS" --json 2>/dev/null
 
 **Subagent A — Logic & Correctness Review:**
 ```
-Review the code at $ARGUMENTS for:
-1. Logical correctness — are algorithms correct? Any off-by-one errors?
-2. Edge cases — null/None handling, empty collections, integer overflow
-3. Error handling — are exceptions caught and handled properly?
-4. Async/concurrency issues — race conditions, deadlocks
-5. Resource leaks — files, connections, memory not released
+TOKEN BUDGET: Output ONLY a JSON array. No prose before or after.
 
-For each issue found: severity (critical|warning|info), file, line, description, suggested fix.
-Output as JSON array: [{severity, file, line, description, suggestion}]
+Review $ARGUMENTS for: correctness, edge cases (null/empty/overflow),
+error handling, async races, resource leaks.
+
+Each issue: {"s":"critical|warning|info","f":"file","l":line,"d":"≤80-char description","fix":"≤80-char fix"}
+Omit info-level if total issues > 20. Cap array at 30 entries.
 ```
 
 **Subagent B — Architecture & Style Review:**
 ```
-Review the code at $ARGUMENTS for:
-1. SOLID principles violations
-2. Code duplication (DRY)
-3. Naming clarity — variables, functions, classes
-4. Function/method length and complexity (cyclomatic complexity)
-5. Test coverage — are edge cases tested?
-6. Documentation completeness — public APIs documented?
+TOKEN BUDGET: Output ONLY a JSON array. No prose before or after.
 
-Output as JSON array: [{severity, file, line, description, suggestion}]
+Review $ARGUMENTS for: SOLID violations, DRY, naming, cyclomatic complexity,
+test coverage, public API documentation.
+
+Each issue: {"s":"critical|warning|info","f":"file","l":line,"d":"≤80-char description","fix":"≤80-char fix"}
+Omit info-level if total issues > 20. Cap array at 30 entries.
 ```
 
 ### Step 3 — Merge Reports
@@ -80,6 +76,17 @@ Group by severity. Sort critical → warning → info.
 ## Verdict
 PASS | FAIL | CONDITIONAL PASS
 ```
+
+### Step 5 — Log Review Session
+
+```bash
+printf '%s\tREVIEW_%s\ttarget=%s\tcritical=%d\twarnings=%d\n' \
+  "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  "$VERDICT" "$ARGUMENTS" "$CRITICAL_COUNT" "$WARNING_COUNT" \
+  >> .claude/logs/agent.log
+```
+
+Write full report to `docs/reviews/<basename>-<date>.md`.
 
 ## Fail Criteria
 - Any security vulnerability → FAIL
