@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_storage_logo_2",
+    "description": "Storage position for a LOGO insert",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 22000
+        }
+    ],
+    "position": {
+        "X": 73.06243133544922,
+        "Y": 75.584716796875,
+        "Z": -24.195552825927734,
+        "A": 0.0004882853245362639,
+        "B": 0.00021467670740094036,
+        "C": -179.99734497070312
+    }
+}

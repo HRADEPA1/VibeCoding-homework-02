@@ -1,0 +1,512 @@
+{
+    "version": 1,
+    "robot_operations": [
+        {
+            "index": 10,
+            "name": "Move To Home",
+            "description": "Moves the robot from any position to home position using a PTP motion.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": []
+        },
+        {
+            "index": 11,
+            "name": "Move To Position",
+            "description": "Moves the robot from any position to a position specified by the parameters using a LIN motion.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": [
+                {
+                    "index": 1,
+                    "name": "Base Frame ID",
+                    "description": "Index of the robot base frame used for the motion.",
+                    "min_value": 1,
+                    "max_value": 128
+                },
+                {
+                    "index": 2,
+                    "name": "X Position",
+                    "description": "Target X coordinate, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 3,
+                    "name": "Y Position",
+                    "description": "Target Y coordinate, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 4,
+                    "name": "Z Position",
+                    "description": "Target Z coordinate, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 5,
+                    "name": "Z Rotation (A)",
+                    "description": "Target Z rotation, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 6,
+                    "name": "Y Rotation (B)",
+                    "description": "Target Y coordinate, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 7,
+                    "name": "X Rotation (C)",
+                    "description": "Target X coordinate, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                }
+            ]
+        },
+        {
+            "index": 12,
+            "name": "Approach",
+            "description": "Approaches the specified position through an intermediate position specified by the offest using a LIN motion. Start and end of the program are in the home position.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": [
+                {
+                    "index": 1,
+                    "name": "Base Frame ID",
+                    "description": "Index of the robot base frame used for the motion.",
+                    "min_value": 1,
+                    "max_value": 128
+                },
+                {
+                    "index": 2,
+                    "name": "Offset",
+                    "description": "Offset in the Z direction of the tool used to generate intermediate approach position for the motion, in 10um steps (1 mm * 100).",
+                    "min_value": 10000,
+                    "max_value": 30000
+                },
+                {
+                    "index": 3,
+                    "name": "X Position",
+                    "description": "X coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 4,
+                    "name": "Y Position",
+                    "description": "Y coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 5,
+                    "name": "Z Position",
+                    "description": "Z coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 6,
+                    "name": "Z Rotation (A)",
+                    "description": "Z rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 7,
+                    "name": "Y Rotation (B)",
+                    "description": "Y rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 8,
+                    "name": "X Rotation (C)",
+                    "description": "X rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                }
+            ]
+        },
+        {
+            "index": 13,
+            "name": "Approach Vertical",
+            "description": "Approaches the specified position through an intermediate position specified by the offest using a LIN motion. Start and end of the program are in the home position.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": [
+                {
+                    "index": 1,
+                    "name": "Base Frame ID",
+                    "description": "Index of the robot base frame used for the motion.",
+                    "min_value": 1,
+                    "max_value": 128
+                },
+                {
+                    "index": 2,
+                    "name": "Offset",
+                    "description": "Offset in the Z direction of the tool used to generate intermediate approach position for the motion, in 10um steps (1 mm * 100).",
+                    "min_value": 10000,
+                    "max_value": 30000
+                },
+                {
+                    "index": 3,
+                    "name": "X Position",
+                    "description": "X coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 4,
+                    "name": "Y Position",
+                    "description": "Y coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 5,
+                    "name": "Z Position",
+                    "description": "Z coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 6,
+                    "name": "Z Rotation (A)",
+                    "description": "Z rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                }
+            ]
+        },
+        {
+            "index": 11,
+            "name": "Move To Position",
+            "description": "Moves the robot from any position to a position specified by the parameters using a LIN motion.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": [
+                {
+                    "index": 1,
+                    "name": "Base Frame ID",
+                    "description": "Index of the robot base frame used for the motion.",
+                    "min_value": 1,
+                    "max_value": 128
+                },
+                {
+                    "index": 2,
+                    "name": "X Position",
+                    "description": "Target X coordinate, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 3,
+                    "name": "Y Position",
+                    "description": "Target Y coordinate, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 4,
+                    "name": "Z Position",
+                    "description": "Target Z coordinate, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 5,
+                    "name": "Z Rotation (A)",
+                    "description": "Target Z rotation, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 6,
+                    "name": "Y Rotation (B)",
+                    "description": "Target Y coordinate, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 7,
+                    "name": "X Rotation (C)",
+                    "description": "Target X coordinate, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                }
+            ]
+        },
+        {
+            "index": 20,
+            "name": "Pick",
+            "description": "Picks from the specified position with intermediate position specified from the pick position using the offset parameter. Start and end of the program are in the home position.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": [
+                {
+                    "index": 1,
+                    "name": "Base Frame ID",
+                    "description": "Index of the robot base frame used for the motion.",
+                    "min_value": 1,
+                    "max_value": 128
+                },
+                {
+                    "index": 2,
+                    "name": "Offset",
+                    "description": "Offset in the Z direction of the tool used to generate intermediate approach position for the motion, in 10um steps (1 mm * 100).",
+                    "min_value": 10000,
+                    "max_value": 30000
+                },
+                {
+                    "index": 3,
+                    "name": "X Position",
+                    "description": "X coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 4,
+                    "name": "Y Position",
+                    "description": "Y coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 5,
+                    "name": "Z Position",
+                    "description": "Z coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 6,
+                    "name": "Z Rotation (A)",
+                    "description": "Z rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 7,
+                    "name": "Y Rotation (B)",
+                    "description": "Y rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 8,
+                    "name": "X Rotation (C)",
+                    "description": "X rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                }
+            ]
+        },
+        {
+            "index": 21,
+            "name": "Pick Vertical",
+            "description": "Picks from the specified position with intermediate position specified from the pick position using the offset parameter. Start and end of the program are in the home position.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": [
+                {
+                    "index": 1,
+                    "name": "Base Frame ID",
+                    "description": "Index of the robot base frame used for the motion.",
+                    "min_value": 1,
+                    "max_value": 128
+                },
+                {
+                    "index": 2,
+                    "name": "Offset",
+                    "description": "Offset in the Z direction of the tool used to generate intermediate approach position for the motion, in 10um steps (1 mm * 100).",
+                    "min_value": 10000,
+                    "max_value": 30000
+                },
+                {
+                    "index": 3,
+                    "name": "X Position",
+                    "description": "X coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 4,
+                    "name": "Y Position",
+                    "description": "Y coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 5,
+                    "name": "Z Position",
+                    "description": "Z coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 6,
+                    "name": "Z Rotation (A)",
+                    "description": "Z rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                }
+            ]
+        },
+        {
+            "index": 30,
+            "name": "Place",
+            "description": "Places to the specified position with intermediate position specified from the place position using the offset parameter. Start and end of the program are in the home position.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": [
+                {
+                    "index": 1,
+                    "name": "Base Frame ID",
+                    "description": "Index of the robot base frame used for the motion.",
+                    "min_value": 1,
+                    "max_value": 128
+                },
+                {
+                    "index": 2,
+                    "name": "Offset",
+                    "description": "Offset in the Z direction of the tool used to generate intermediate approach position for the motion, in 10um steps (1 mm * 100).",
+                    "min_value": 10000,
+                    "max_value": 30000
+                },
+                {
+                    "index": 3,
+                    "name": "X Position",
+                    "description": "X coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 4,
+                    "name": "Y Position",
+                    "description": "Y coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 5,
+                    "name": "Z Position",
+                    "description": "Z coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 6,
+                    "name": "Z Rotation (A)",
+                    "description": "Z rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 7,
+                    "name": "Y Rotation (B)",
+                    "description": "Y rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 8,
+                    "name": "X Rotation (C)",
+                    "description": "X rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                }
+            ]
+        },
+        {
+            "index": 31,
+            "name": "Place Vertical",
+            "description": "Places to the specified position with intermediate position specified from the place position using the offset parameter. Start and end of the program are in the home position.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": [
+                {
+                    "index": 1,
+                    "name": "Base Frame ID",
+                    "description": "Index of the robot base frame used for the motion.",
+                    "min_value": 1,
+                    "max_value": 128
+                },
+                {
+                    "index": 2,
+                    "name": "Offset",
+                    "description": "Offset in the Z direction of the tool used to generate intermediate approach position for the motion, in 10um steps (1 mm * 100).",
+                    "min_value": 10000,
+                    "max_value": 30000
+                },
+                {
+                    "index": 3,
+                    "name": "X Position",
+                    "description": "X coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 4,
+                    "name": "Y Position",
+                    "description": "Y coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 5,
+                    "name": "Z Position",
+                    "description": "Z coordinate of the final position, in 10um steps (1 mm * 100).",
+                    "min_value": null,
+                    "max_value": null
+                },
+                {
+                    "index": 6,
+                    "name": "Z Rotation (A)",
+                    "description": "Z rotation of the final position, in 0.01 degree steps (1 deg * 100).",
+                    "min_value": null,
+                    "max_value": null
+                }
+            ]
+        },
+        {
+            "index": 50,
+            "name": "Brake Test",
+            "description": "Performs robot brake test, if it is needed.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": []
+        },
+        {
+            "index": 51,
+            "name": "Run Tool Command",
+            "description": "Performs specified tool command.",
+            "supported_robots": [
+                "R1", "R2", "R3"
+            ],
+            "parameters": [
+                {
+                    "index": 1,
+                    "name": "Tool Command Index",
+                    "description": "Index of the tool command that should be run.",
+                    "min_value": null,
+                    "max_value": null
+                }
+            ]
+        }
+    ]
+}

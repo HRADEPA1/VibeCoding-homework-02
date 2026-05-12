@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_push_in_rivet_3",
+    "description": "Push-in position of a rivet in corner 3 of the maze",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 0
+        }
+    ],
+    "position": {
+        "X": 98.16858673095703,
+        "Y": 7.1694655418396,
+        "Z": 2.3495068550109863,
+        "A": -0.0011716565350070596,
+        "B": 0.0001240673300344497,
+        "C": -179.99803161621094
+    }
+}

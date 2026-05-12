@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_place_insert_finish",
+    "description": "Placing position of the FINISH insert",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 7000
+        }
+    ],
+    "position": {
+        "X": 30.93582534790039,
+        "Y": 14.3735990524292,
+        "Z": 1.4081469774246216,
+        "A": 1.1674827874230687e-05,
+        "B": -0.0002760095812845975,
+        "C": 179.99815368652344
+    }
+}

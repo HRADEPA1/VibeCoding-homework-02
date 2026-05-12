@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_pick_insert_finish",
+    "description": "Placing position of the FINISH insert to remove it from the maze",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 7000
+        }
+    ],
+    "position": {
+        "X": 30.766902923583984,
+        "Y": 14.065315246582031,
+        "Z": -4.941340923309326,
+        "A": -7.104650285327807e-05,
+        "B": 0.00022315385285764933,
+        "C": -179.99623107910156
+    }
+}

@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_storage_insert_4",
+    "description": "Storage position for a START or a FINISH insert",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 12000
+        }
+    ],
+    "position": {
+        "X": 28.55796241760254,
+        "Y": 85.54951477050781,
+        "Z": -24.102663040161133,
+        "A": -0.0002692325215321034,
+        "B": -2.8606251362361945e-05,
+        "C": -179.99856567382812
+    }
+}

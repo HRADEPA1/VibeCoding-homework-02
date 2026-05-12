@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_pick_insert_logo",
+    "description": "Placing position of the LOGO insert to remove it from the maze",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 22000
+        }
+    ],
+    "position": {
+        "X": 52.81950759887695,
+        "Y": 51.74066925048828,
+        "Z": -4.939563274383545,
+        "A": 0.00017387403931934386,
+        "B": 0.00031246221624314785,
+        "C": -179.9961700439453
+    }
+}

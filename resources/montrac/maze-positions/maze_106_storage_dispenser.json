@@ -1,0 +1,26 @@
+{
+    "position_name": "maze_106_storage_dispenser",
+    "description": "Storage stand for the ball bearing dispenser",
+    "valid_bases": [
+        {
+            "robot_id": 3,
+            "base_id_list": [
+                31
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 9,
+            "open_position": 80000
+        }
+    ],
+    "position": {
+        "X": 46.663902282714844,
+        "Y": 45.360313415527344,
+        "Z": 78.31586456298828,
+        "A": 89.99663543701172,
+        "B": 0.0013246707385405898,
+        "C": -179.9981689453125
+    }
+}

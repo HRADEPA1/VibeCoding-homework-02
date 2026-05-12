@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_place_insert_logo",
+    "description": "Placing position of the LOGO insert",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 22000
+        }
+    ],
+    "position": {
+        "X": 52.81950759887695,
+        "Y": 51.74066925048828,
+        "Z": 1.210487723350525,
+        "A": -0.1575138121843338,
+        "B": -0.0062494585290551186,
+        "C": -179.89895629882812
+    }
+}

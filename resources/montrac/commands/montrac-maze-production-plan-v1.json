@@ -1,0 +1,55 @@
+{
+    "version": 1,
+    "maze_production": [
+        {
+            "step": 1,
+            "name": "Pick Plastic Insert - MAZE START",
+            "robot_operation": 21
+        },
+        {
+            "step": 2,
+            "name": "Place Plastic Insert - MAZE START",
+            "robot_operation": 31
+        },
+        {
+            "step": 3,
+            "name": "Pick Plastic Insert - MAZE FINISH",
+            "robot_operation": 21
+        },
+        {
+            "step": 4,
+            "name": "Place Plastic Insert - MAZE FINISH",
+            "robot_operation": 31
+        },
+        {
+            "step": 5,
+            "name": "Pick Plastic Insert - MAZE LOGO",
+            "robot_operation": 21
+        },
+        {
+            "step": 6,
+            "name": "Place Plastic Insert - MAZE LOGO",
+            "robot_operation": 31
+        },
+        {
+            "step": 7,
+            "name": "Insert metal ball",
+            "robot_operation": 13
+        },
+        {
+            "step": 8,
+            "name": "Pick plexiglass cover",
+            "robot_operation": 21
+        },
+        {
+            "step": 9,
+            "name": "Place plexiglass cover",
+            "robot_operation": 31
+        },
+        {
+            "step": 10,
+            "name": "Insert 4 rivets",
+            "robot_operation": 13
+        }
+    ]
+}

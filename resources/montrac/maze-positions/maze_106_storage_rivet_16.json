@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_storage_rivet_16",
+    "description": "Storage position for a rivet",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 7000
+        }
+    ],
+    "position": {
+        "X": 53.62807083129883,
+        "Y": 51.967864990234375,
+        "Z": -23.437650680541992,
+        "A": 0.00015813406207598746,
+        "B": -0.00022174115292727947,
+        "C": 179.99935913085938
+    }
+}

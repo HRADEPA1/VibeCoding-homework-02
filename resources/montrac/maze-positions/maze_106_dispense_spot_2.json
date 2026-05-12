@@ -1,0 +1,28 @@
+{
+    "position_name": "maze_106_dispense_spot_2",
+    "description": "Position for dispensing a ball bearing",
+    "valid_bases": [
+        {
+            "robot_id": 3,
+            "base_id_list": [
+                11,
+                12,
+                13
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 9,
+            "open_position": 80000
+        }
+    ],
+    "position": {
+        "X": 79.91813659667969,
+        "Y": 45.34202194213867,
+        "Z": 66.57843780517578,
+        "A": 90.19342803955078,
+        "B": 0.40167737007141113,
+        "C": -179.6976776123047
+    }
+}

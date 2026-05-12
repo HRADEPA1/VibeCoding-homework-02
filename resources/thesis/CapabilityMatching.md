@@ -1,0 +1,9 @@
+# Capability Matching for Assembly and Disassembly in Manufacturing
+
+The aim of the thesis is to design, implement, and experimentally evaluate a hybrid capability-matching system for assembly and disassembly processes in manufacturing. The system will combine reasoning over a formal semantic model with graph-neural evaluation of capability suitability. The solution will use Asset Administration Shell (AAS) as a source of structured semantic data, TypeDB as the ontology and reasoning layer, and OPC UA runtime data to reflect the current state of production resources. The proposed method will be validated on representative assembly and disassembly scenarios and compared with a rule-based baseline.
+
+1.	Analyze related approaches and technologies relevant to the thesis, especially AAS, industrial ontologies and knowledge graphs, graph neural networks, and OPC UA/MQTT communication in manufacturing systems.
+2.	Design a formal semantic model of products, manufacturing resources, capabilities, constraints, and runtime production-line state for assembly and disassembly processes and implement this model in a knowledge-graph framework.
+3.	Implement data integration from AAS and runtime sources, including transformation of selected AAS submodels into the knowledge graph and incorporation of OPC UA data into the decision-making process.
+4.	Develop a hybrid capability-matching method that combines filtering based on logical constraints and precondition verification with graph-neural ranking of feasible capabilities according to expected suitability and probability of successful execution.
+5.	Experimentally evaluate the proposed solution on selected manufacturing assembly and disassembly use cases, compare it with a rule-based baseline, and assess its performance using measurable criteria such as matching accuracy, ranking quality, latency, and scalability.

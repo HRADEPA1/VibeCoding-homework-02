@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_pick_glass",
+    "description": "Picking position of the glass to remove it from the maze",
+    "valid_bases": [
+        {
+            "robot_id": 2,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 10,
+            "open_position": 0
+        }
+    ],
+    "position": {
+        "X": 53.51381301879883,
+        "Y": 53.543819427490234,
+        "Z": -1.2657442092895508,
+        "A": 134.7920684814453,
+        "B": -0.5722109079360962,
+        "C": 179.45835876464844
+    }
+}

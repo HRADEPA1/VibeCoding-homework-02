@@ -1,0 +1,17 @@
+{
+    "version": 1,
+    "robots": [
+        {
+            "name": "R1",
+            "model": "Agilus 2"
+        },
+        {
+            "name": "R2",
+            "model": "Agilus 2"
+        },
+        {
+            "name": "R3",
+            "model": "Agilus 2"
+        }
+    ]
+}

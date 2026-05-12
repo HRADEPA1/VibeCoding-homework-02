@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_pick_insert_start",
+    "description": "Picking position of the START insert to remove it from the maze",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 7000
+        }
+    ],
+    "position": {
+        "X": 30.82854652404785,
+        "Y": 89.16619873046875,
+        "Z": -4.950438022613525,
+        "A": 0.00026383710792288184,
+        "B": 7.827901572454721e-05,
+        "C": -179.9976806640625
+    }
+}

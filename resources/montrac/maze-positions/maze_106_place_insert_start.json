@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_place_insert_start",
+    "description": "Placing position of the START insert",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 7000
+        }
+    ],
+    "position": {
+        "X": 30.94237518310547,
+        "Y": 89.26480102539062,
+        "Z": 1.3752093315124512,
+        "A": 0.0003008595376741141,
+        "B": -0.00037130468990653753,
+        "C": 179.99813842773438
+    }
+}

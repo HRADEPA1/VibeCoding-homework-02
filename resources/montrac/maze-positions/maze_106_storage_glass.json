@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_storage_glass",
+    "description": "Storage position of the glass pane",
+    "valid_bases": [
+        {
+            "robot_id": 2,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 10,
+            "open_position": 0
+        }
+    ],
+    "position": {
+        "X": 53.056182861328125,
+        "Y": 53.01998519897461,
+        "Z": -9.668622970581055,
+        "A": 134.7918701171875,
+        "B": -0.563494861125946,
+        "C": 179.46484375
+    }
+}

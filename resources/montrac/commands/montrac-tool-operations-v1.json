@@ -1,0 +1,41 @@
+{
+    "version": 1,
+    "tool_operations": [
+        {
+            "index": 10,
+            "name": "Acknowledge Error",
+            "description": "Acknowledges gripper error.",
+            "supported_tools": [
+                "T2", "T3", "T7", "T16"
+            ],
+            "parameters": []
+        },
+        {
+            "index": 11,
+            "name": "Reference",
+            "description": "Performs gripper referencing.",
+            "supported_tools": [
+                "T2", "T3", "T7", "T16"
+            ],
+            "parameters": []
+        },
+        {
+            "index": 20,
+            "name": "Release",
+            "description": "Sets the gripper into release state.",
+            "supported_tools": [
+                "T2", "T3", "T7", "T8", "T9", "T12", "T16"
+            ],
+            "parameters": []
+        },
+        {
+            "index": 21,
+            "name": "Grip",
+            "description": "Sets the gripper into gripping state.",
+            "supported_tools": [
+                "T2", "T3", "T7", "T8", "T9", "T12", "T16"
+            ],
+            "parameters": []
+        }
+    ]
+}

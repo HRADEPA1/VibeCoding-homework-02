@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_place_rivet_3",
+    "description": "Placing position of a rivet in corner 3 of the maze",
+    "valid_bases": [
+        {
+            "robot_id": 1,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 2,
+            "open_position": 7000
+        }
+    ],
+    "position": {
+        "X": 98.16132354736328,
+        "Y": 7.199188232421875,
+        "Z": 3.462886095046997,
+        "A": -0.0013963192468509078,
+        "B": 0.0009004545863717794,
+        "C": -179.99362182617188
+    }
+}

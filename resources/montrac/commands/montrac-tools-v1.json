@@ -1,0 +1,45 @@
+{
+    "version": 1,
+    "tools": [
+        {
+            "name": "T1",
+            "model": "-",
+            "type": "Calibration needle"
+        },
+        {
+            "name": "T2",
+            "model": "EGI-40",
+            "type": "Electric Finger"
+        },
+        {
+            "name": "T3",
+            "model": "EGL-90",
+            "type": "Electric Finger"
+        },
+        {
+            "name": "T7",
+            "model": "EGL-90",
+            "type": "Electric Finger"
+        },
+        {
+            "name": "T8",
+            "model": "PGN+P100-1",
+            "type": "Pneumatic Finger"
+        },
+        {
+            "name": "T9",
+            "model": "PGN+P100-1",
+            "type": "Pneumatic Finger"
+        },
+        {
+            "name": "T12",
+            "model": "PGN+P64-1",
+            "type": "Pneumatic Finger"
+        },
+        {
+            "name": "T16",
+            "model": "EGI-80",
+            "type": "Electric Finger"
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+{
+    "position_name": "maze_106_place_glass",
+    "description": "Placing position of the glass on top of the maze",
+    "valid_bases": [
+        {
+            "robot_id": 2,
+            "base_id_list": [
+                11,
+                12,
+                13,
+                21,
+                22,
+                23
+            ]
+        }
+    ],
+    "valid_tools": [
+        {
+            "tool_id": 10,
+            "open_position": 0
+        }
+    ],
+    "position": {
+        "X": 53.51283645629883,
+        "Y": 53.54655838012695,
+        "Z": 2.0810515880584717,
+        "A": 134.7919921875,
+        "B": -0.5725667476654053,
+        "C": 179.45809936523438
+    }
+}
