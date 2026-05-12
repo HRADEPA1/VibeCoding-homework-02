@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json.schemastore.org/claude-settings.json",
+
+  "mcpServers": {
+
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        ".",
+        "./data",
+        "./src",
+        "./docs"
+      ],
+      "description": "Local filesystem access scoped to project directories"
+    },
+
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "GitHub API: search code, manage issues/PRs, read repo contents"
+    },
+
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "description": "Real-time web search via Brave Search API"
+    },
+
+    "sqlite": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sqlite",
+        "--db-path",
+        "./data/research.db"
+      ],
+      "description": "SQLite database for persisting research findings and session state"
+    },
+
+    "research-mcp": {
+      "command": "node",
+      "args": ["./mcp-servers/research-mcp/server.js"],
+      "env": {
+        "ARXIV_BASE_URL": "https://export.arxiv.org/api/query",
+        "MAX_RESULTS": "20"
+      },
+      "description": "Custom MCP: arXiv paper fetching, summarization, structured finding storage"
+    }
+
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(npm:*)",
+      "Bash(pnpm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(uv:*)",
+      "Bash(rg:*)",
+      "Bash(fd:*)",
+      "Bash(jq:*)",
+      "Bash(curl:*)",
+      "Read(**)",
+      "Write(src/**)",
+      "Write(docs/**)",
+      "Write(data/**)",
+      "Write(.claude/**)",
+      "Edit(src/**)",
+      "Edit(docs/**)",
+      "Edit(CLAUDE.md)",
+      "WebFetch(*)",
+      "mcp__filesystem__*",
+      "mcp__github__*",
+      "mcp__brave-search__*",
+      "mcp__sqlite__*",
+      "mcp__research-mcp__*"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(sudo:*)",
+      "Bash(curl * | bash)",
+      "Write(/etc/**)",
+      "Write(/usr/**)"
+    ]
+  },
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[HOOK] Bash: '\"$CLAUDE_TOOL_INPUT\" >> .claude/session-notes.md"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[HOOK] Write: '\"$CLAUDE_TOOL_INPUT\" >> .claude/session-notes.md"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ \"$CLAUDE_TOOL_EXIT_CODE\" != \"0\" ]; then echo '[HOOK][ERROR] Bash failed at '$(date -u +%Y-%m-%dT%H:%M:%SZ) >> .claude/session-notes.md; fi"
+          }
+        ]
+      }
+    ]
+  },
+
+  "env": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "NODE_ENV": "development"
+  },
+
+  "includeCoAuthoredBy": true,
+  "cleanupPeriodDays": 30
+}

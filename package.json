@@ -1,0 +1,22 @@
+{
+  "name": "research-mcp",
+  "version": "1.0.0",
+  "description": "Custom MCP server for academic research pipelines — arXiv fetching, paper summarization, finding storage",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "node-fetch": "^3.3.2",
+    "fast-xml-parser": "^4.3.0",
+    "better-sqlite3": "^9.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": ["mcp", "research", "arxiv", "claude-code"],
+  "license": "MIT"
+}
