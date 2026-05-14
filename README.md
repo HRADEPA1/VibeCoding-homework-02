@@ -204,4 +204,81 @@ graph TD
 
 ---
 
+## Capability Matcher — Thesis Project
+
+The main research deliverable: a hybrid capability-matching system for the RICAIP Montrac assembly line (Maze 106 product).
+
+### Quick Usage
+
+```bash
+# Install
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r src/requirements.txt
+
+# Match step 1 (Mode A — file-based, no hardware needed)
+PYTHONPATH=src python -m capability_matcher.cli --step 1
+
+# Full stack
+docker compose up -d
+```
+
+### API
+
+```bash
+# List all 18 process steps
+curl -s http://localhost:8080/steps
+
+# Match step 1 (Mode A)
+curl -s -X POST http://localhost:8080/match \
+  -H "Content-Type: application/json" \
+  -d '{
+    "step": {
+      "step_index": 1, "step_name": "Pick START Insert",
+      "op_index": 21, "component": "START-INSERT_106",
+      "position_name": "maze_106_pick_insert_start"
+    },
+    "workcell": {
+      "robots": [
+        {"robot_id": 1, "tool_id": 2, "active_base_id": 11},
+        {"robot_id": 2, "tool_id": 10, "active_base_id": 11},
+        {"robot_id": 3, "tool_id": 2, "active_base_id": 11}
+      ]
+    }
+  }'
+```
+
+### Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`docs/QUICKSTART.md`](docs/QUICKSTART.md) | Installation, Docker Compose, all run modes |
+| [`docs/API.md`](docs/API.md) | Full API reference: models, filter, ranker, REST endpoints, scripts |
+| [`docs/TESTING.md`](docs/TESTING.md) | Mode A test scenarios, findings, verbose diagnostics |
+| [`resources/thesis/CapabilityMatching.md`](resources/thesis/CapabilityMatching.md) | Thesis specification and system design |
+| [`.env.example`](.env.example) | All environment variables with descriptions |
+
+### Project Structure
+
+```
+src/
+├── capability_matcher/   ← matching engine (filter + ranker + API + CLI)
+├── scripts/              ← seed_kg, generate_training_data, train_gnn, run_mode_a_tests
+├── tracking/             ← digital twin + OPC UA client
+└── tests/                ← 19 unit tests
+resources/
+├── montrac/              ← robots.json, tools.json, process_steps.json, maze-positions/
+└── typedb/               ← TypeDB 3 schema
+tools/
+└── typedb-studio-web/    ← browser-based TypeDB query UI (port 8889)
+mock/opcua-mock/          ← standalone OPC UA mock server (ns=4, Montrac address space)
+docs/                     ← QUICKSTART.md, API.md, TESTING.md
+data/
+├── test_states/          ← 7 Mode A fixture files (nominal, busy, error, degraded…)
+├── logs/                 ← typedb.log (JSON-lines), agent.log
+└── training/             ← generated GNN training data (JSONL)
+models/                   ← trained GNN checkpoints
+```
+
+---
+
 *Homework 2 — Vibecoding | Pavel Hradecký | 2026-05-12*

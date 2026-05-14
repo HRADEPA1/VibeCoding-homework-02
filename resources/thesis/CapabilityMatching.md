@@ -246,15 +246,15 @@ The capability-matching system operates in three distinct modes depending on the
 ```mermaid
 flowchart TB
     subgraph INPUT["Input Sources"]
-        FA[/"JSON files\nprocess steps + resource state"/]
-        FB[/"AAS submodels\n+ OPC UA read"/]
-        FC[/"OPC UA live\nsubscriptions"/]
+        FA[/"JSON files process steps + resource state"/]
+        FB[/"AAS submodels + OPC UA read"/]
+        FC[/"OPC UA live subscriptions"/]
     end
 
     subgraph CORE["Matching Engine (shared)"]
-        KG[(TypeDB\nKnowledge Graph)]
-        FILTER[Constraint Filter\nTypeQL]
-        GNN[GNN Ranker\nPyTorch Geometric]
+        KG[(TypeDB Knowledge Graph)]
+        FILTER[Constraint Filter TypeQL]
+        GNN[GNN Ranker PyTorch Geometric]
         FILTER --> GNN
         KG --> FILTER
     end
@@ -435,7 +435,134 @@ relation executed-by    relates process-step, relates robot;
 | Base frame reachable | `base_id ∈ position.valid_bases` for robot |
 | Assembly order respected | `step.preconditions ⊆ completed_steps` |
 
-### 5.3 Runtime State Integration via OPC UA
+### 5.3 JSON Entity Specification
+
+All entities are exchanged as JSON files. This is the canonical intermediate format in the ETL pipeline — AAS submodels (when available) are first converted to this format before being loaded into TypeDB. For v1 the JSON files are authored directly; AAS alignment is deferred to v3.
+
+#### robots.json
+```json
+[
+  {
+    "robot_id": 1,
+    "label": "R1",
+    "model": "KUKA Agilus 2",
+    "supported_ops": [10, 11, 12, 13, 20, 21, 30, 31, 40, 41, 50, 51, 200, 201],
+    "toolchangers": [
+      {"slot": 1, "tool_id": 2},
+      {"slot": 2, "tool_id": 3},
+      {"slot": 3, "tool_id": 7},
+      {"slot": 4, "tool_id": 8}
+    ]
+  }
+]
+```
+
+#### tools.json
+```json
+[
+  {
+    "tool_id": 2,
+    "model": "EGI-40",
+    "type": "electric_finger",
+    "can_grip": true,
+    "can_reference": true,
+    "grip_range_um": [0, 40000],
+    "payload_kg": 1.5
+  },
+  {
+    "tool_id": 8,
+    "model": "PGN+P100-1",
+    "type": "pneumatic_finger",
+    "can_grip": true,
+    "can_reference": false,
+    "grip_range_um": [0, 100000],
+    "payload_kg": 4.0
+  }
+]
+```
+
+#### positions.json
+```json
+[
+  {
+    "position_name": "maze_106_pick_insert_start",
+    "x_um": 30830,
+    "y_um": 89170,
+    "z_um": -4950,
+    "a_mdeg": -180000,
+    "b_mdeg": 0,
+    "c_mdeg": 0,
+    "valid_robots": [1],
+    "valid_bases": [11, 12, 13, 21, 22, 23],
+    "valid_tools": [{"tool_id": 2, "open_position_um": 7000}],
+    "approach_offset_um": 150000,
+    "op_types": ["PickVertical"]
+  }
+]
+```
+
+#### capabilities.json
+```json
+[
+  {
+    "capability_id": "cap_r1_t2_pick_vertical",
+    "type": "PickVertical",
+    "op_index": 21,
+    "robot_id": 1,
+    "tool_id": 2,
+    "valid_bases": [11, 12, 13, 21, 22, 23],
+    "covered_positions": ["maze_106_pick_insert_start", "maze_106_pick_insert_finish", "maze_106_pick_insert_logo"]
+  }
+]
+```
+
+#### process_steps.json
+```json
+[
+  {
+    "step_index": 1,
+    "step_name": "Pick Start Insert",
+    "op_index": 21,
+    "component": "START-INSERT_106",
+    "position_name": "maze_106_pick_insert_start",
+    "preconditions": [],
+    "postconditions": ["start_insert_picked"]
+  },
+  {
+    "step_index": 2,
+    "step_name": "Place Start Insert",
+    "op_index": 31,
+    "component": "START-INSERT_106",
+    "position_name": "maze_106_place_insert_start",
+    "preconditions": ["start_insert_picked"],
+    "postconditions": ["start_insert_placed"]
+  }
+]
+```
+
+#### ETL Flow
+
+```mermaid
+flowchart LR
+    AAS[/"AAS submodels\n(future — v3)"/] -->|"aas2json.py"| JSON
+    AUTH[/"Authored JSON\n(v1 — direct)"/] --> JSON
+
+    subgraph JSON["Canonical JSON\nresources/montrac/"]
+        RJ[robots.json]
+        TJ[tools.json]
+        PJ[positions.json]
+        CJ[capabilities.json]
+        SJ[process_steps.json]
+    end
+
+    JSON -->|"scripts/seed_kg.py"| TYPEDB[(TypeDB\ncapability_kg)]
+
+    style AAS fill:#3b3000,color:#fff
+    style AUTH fill:#1a472a,color:#fff
+    style JSON fill:#1e3a5f,color:#fff
+```
+
+### 5.4 Runtime State Integration via OPC UA
 
 The OPC UA server is a **Siemens S7-1500 PLC** (`urn:SIMATIC.S7-1500.OPC-UAServer:=Name.PLC15xx`) with the factory namespace `http://prague.ti40.cz/factory/` at index `ns=4`. All production-relevant nodes live under `Root.Objects.W1`.
 
@@ -714,7 +841,54 @@ sequenceDiagram
 | Scalability | Matching time vs. number of resources (1–10 robots) |
 | Constraint recall | % hard violations correctly filtered before GNN |
 
-### 8.3 Baseline
+### 8.3 Training Data Generation
+
+GNN training data is generated synthetically from the five evaluation scenarios rather than collected from manual testbed runs. The generator produces labelled `(graph_snapshot, step, robot, outcome)` tuples by perturbing resource state across a parameter grid.
+
+**Generation script:** `scripts/generate_training_data.py`
+
+**Parameter grid per scenario:**
+
+| Dimension | Values sampled |
+|-----------|---------------|
+| Available robots | all subsets of {R1, R2, R3} with ≥ 1 robot |
+| Mounted tool per robot | all valid tool IDs for that robot |
+| Robot error state | `Error_ID ∈ {0, 1, 5, 99}` (0 = healthy) |
+| Active base frame | sampled from `valid_bases` ∪ one invalid frame |
+| Execution outcome | deterministic from hard constraints; stochastic noise σ=0.05 added to scores |
+
+**Labelling rule:**
+- `outcome = 1` if robot passes all hard constraints for the step AND is the highest-priority valid robot
+- `outcome = 0` if robot fails any hard constraint
+- `outcome ∈ (0, 1)` for secondary valid robots — score derived from constraint satisfaction ratio
+
+**Output schema (`data/training/`):**
+```json
+{
+  "scenario": "MAZE_106_Assembly",
+  "step_index": 1,
+  "graph": {
+    "nodes": [...],
+    "edges": [...],
+    "node_features": [[...], ...],
+    "edge_features": [[...], ...]
+  },
+  "labels": {"robot_1": 1.0, "robot_2": 0.83, "robot_3": 0.0}
+}
+```
+
+**Target dataset size:** ≥ 5 000 labelled samples across all scenarios (≈ 1 000 per scenario × 5 scenarios).
+
+```mermaid
+flowchart TD
+    SCEN[5 Evaluation Scenarios] --> GEN[generate_training_data.py]
+    GEN -->|"parameter grid × resource states"| SAMPLES[Raw samples]
+    SAMPLES -->|"apply constraint rules+ noise injection"| LABELLED[Labelled dataset data/training/]
+    LABELLED -->|"80/10/10 split"| SPLIT["train / val / test\nJSONL files"]
+    SPLIT --> GNN[GAT training\ntrain_gnn.py]
+```
+
+### 8.4 Baseline
 
 A deterministic rule-based matcher: selects the first robot in {R1, R2, R3} that passes all hard constraints, no ranking. Compared against the hybrid GNN system on all metrics.
 
@@ -729,14 +903,14 @@ The system ships as a set of Docker Compose services for reproducible full-stack
 ```mermaid
 graph TB
     subgraph COMPOSE["docker compose up"]
-        TYPEDB[typedb\nTypeDB 2.x\n:1729]
-        MATCHER[capability-matcher\nPython app\n:8080 REST]
-        MOCK[opcua-mock\nopen62541 mock server\n:4840]
-        SQLITE[/data/research.db\nSQLite volume/]
+        TYPEDB[typedb TypeDB 2.x:1729]
+        MATCHER[capability-matcher Python app:8080 REST]
+        MOCK[opcua-mock open62541 mock server:4840]
+        SQLITE[/data/research.db SQLite volume/]
     end
 
     MATCHER -->|TypeDB gRPC| TYPEDB
-    MATCHER -->|OPC UA client\nMode B / C| MOCK
+    MATCHER -->|OPC UA client Mode B / C| MOCK
     MATCHER -->|file I/O| SQLITE
 
     style COMPOSE fill:#1a472a,color:#fff
@@ -751,15 +925,17 @@ graph TB
 ```yaml
 services:
   typedb:
-    image: vaticle/typedb:2.28.0
+    image: typedb/typedb:3.3.0
     ports:
       - "1729:1729"
     volumes:
       - typedb_data:/opt/typedb-all-linux/server/data
     healthcheck:
-      test: ["CMD", "typedb", "server", "status"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/1729' 2>/dev/null && echo ok || exit 1"]
       interval: 10s
-      retries: 5
+      timeout: 5s
+      retries: 8
+      start_period: 20s
 
   opcua-mock:
     build: ./mock/opcua-mock
@@ -866,9 +1042,269 @@ pytest src/tests/integration/ -v --typedb     # integration (TypeDB must be runn
 
 ---
 
-## 10. Open Questions / Next Steps
+## 10. Digital Twin Control UI
 
-### Known / Resolved
+The Digital Twin Control UI is a web-based dashboard that exposes the full lifecycle of the capability-matching system to a research user: seeding knowledge data, configuring initial resource state, running or step-debugging plan generation, exporting plans for GNN training, and visualizing system behavior over time.
+
+**Grounding:** The UI design is informed by AGDebugger (CHI 2025), AgentStepper (arXiv:2602.06593), and the AVEVA industrial DT visualization patterns. The step-through debug model (Section 10.3) directly mirrors the play/pause/step-confirm pattern validated in those works.
+
+### 10.1 UI Architecture
+
+```mermaid
+graph TB
+    subgraph FRONTEND["Frontend — React + WebSocket"]
+        SEED_PANEL[Seed Panel\nTypeDB data management]
+        STATE_PANEL[State Panel\nCapability state editor]
+        PLAN_PANEL[Plan Panel\nRun · Debug · Stop]
+        EXPORT_PANEL[Export Panel\nJSON plan management]
+        VIZ_PANEL[Visualization Panel\nDiagrams · Stats · Charts]
+    end
+
+    subgraph BACKEND["Backend — FastAPI"]
+        SEED_API[POST /seed\nPOST /clear]
+        STATE_API[GET/POST/PUT/DELETE\n/state]
+        PLAN_API[POST /plan/run\nPOST /plan/debug\nWS /plan/stream]
+        EXPORT_API[GET/POST /plans]
+        VIZ_API[GET /stats\nGET /diagram\nGET /history]
+    end
+
+    subgraph CORE["Matching Engine"]
+        TYPEDB[(TypeDB KG)]
+        GNN[GNN Ranker]
+        SQLITE[(SQLite history)]
+    end
+
+    SEED_PANEL <-->|HTTP| SEED_API
+    STATE_PANEL <-->|HTTP| STATE_API
+    PLAN_PANEL <-->|HTTP + WebSocket| PLAN_API
+    EXPORT_PANEL <-->|HTTP| EXPORT_API
+    VIZ_PANEL <-->|HTTP| VIZ_API
+
+    SEED_API --> TYPEDB
+    STATE_API --> TYPEDB
+    PLAN_API --> TYPEDB
+    PLAN_API --> GNN
+    VIZ_API --> SQLITE
+    VIZ_API --> TYPEDB
+
+    style FRONTEND fill:#1e3a5f,color:#fff
+    style BACKEND fill:#1a472a,color:#fff
+    style CORE fill:#4a235a,color:#fff
+```
+
+### 10.2 Panel 1 — Data Seeding (TypeDB)
+
+Loads all canonical JSON fixtures into TypeDB in a single operation. Provides clear with confirmation to wipe and re-seed.
+
+| Control | Action |
+|---------|--------|
+| **Seed** button | Calls `POST /seed`; inserts robots, tools, positions, capabilities, process_steps from `resources/montrac/` |
+| **Clear** button | Two-step confirm → `POST /clear`; drops all entities and reloads schema |
+| Status row | Shows entity counts: `Robots: 3 · Tools: 8 · Positions: N · Capabilities: N · Steps: 10` |
+| Progress bar | Streams seed progress via SSE; shows per-file status |
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant UI
+    participant API as POST /seed
+    participant KG as TypeDB
+
+    U->>UI: click Seed
+    UI->>API: POST /seed
+    API->>KG: load robots.json
+    API-->>UI: SSE progress {file: robots, count: 3}
+    API->>KG: load tools.json
+    API-->>UI: SSE progress {file: tools, count: 8}
+    Note over API,KG: ... repeat for all fixture files ...
+    API-->>UI: SSE done {total_entities: N}
+    UI->>U: show entity counts
+```
+
+### 10.3 Panel 2 — Initial State Configuration
+
+Allows the user to set which capabilities and robots are enabled/disabled before running plan generation. State snapshots can be saved to named JSON files, reloaded, modified, or deleted — functioning as a parameter library for experiments.
+
+**State JSON schema:**
+```json
+{
+  "state_id": "degraded_R2_error",
+  "description": "R2 in error state, T8 dismounted",
+  "created_at": "2026-05-14T10:00:00Z",
+  "robots": [
+    {"robot_id": 1, "enabled": true, "error_id": 0, "tool_id": 2},
+    {"robot_id": 2, "enabled": true, "error_id": 5, "tool_id": null},
+    {"robot_id": 3, "enabled": true, "error_id": 0, "tool_id": 3}
+  ],
+  "capabilities_override": [
+    {"capability_id": "cap_r2_t3_pick_vertical", "enabled": false}
+  ]
+}
+```
+
+**UI controls:**
+
+| Control | Behavior |
+|---------|----------|
+| Capability grid | Table of `robot × capability → toggle`. Loaded from TypeDB on open. |
+| **Save** | `POST /state` with current grid → writes JSON to `data/states/<id>.json` |
+| **Load** | `GET /state` → lists saved files; selecting one applies overrides to grid |
+| **Modify** | Edit loaded state in grid → **Save** overwrites the file |
+| **Delete** | `DELETE /state/{id}` → removes JSON file after confirm |
+
+### 10.4 Panel 3 — Plan Generation (Run / Debug / Stop)
+
+Triggers the capability matcher to produce an operation plan for the full assembly or disassembly sequence. Supports three execution modes modeled on the AGDebugger step-through pattern.
+
+```mermaid
+flowchart LR
+    A[Run] --> B{Debug mode?}
+    B -->|No — Run| C[Stream all steps\nvia WebSocket]
+    B -->|Yes — Debug| D[Execute step N]
+    D --> E[Emit step_complete event\nstate delta · assignment · score]
+    E --> F{User confirms?}
+    F -->|Continue| D
+    F -->|Abort| G[Stop — emit plan_aborted]
+    C --> H[Emit plan_complete]
+
+    style D fill:#4a235a,color:#fff
+    style H fill:#1a472a,color:#fff
+    style G fill:#4a0f0f,color:#fff
+```
+
+**WebSocket event protocol (`WS /plan/stream`):**
+
+```json
+// step_complete (debug mode — waits for ACK before proceeding)
+{
+  "event": "step_complete",
+  "step_index": 3,
+  "step_name": "Pick Finish Insert",
+  "assignment": {"robot": 1, "tool": 2, "score": 0.91},
+  "state_delta": {"robot_1.busy": true},
+  "requires_ack": true
+}
+
+// user ACK (sent from UI → server to continue)
+{"event": "ack", "step_index": 3}
+
+// plan_complete
+{
+  "event": "plan_complete",
+  "plan_id": "maze_106_assembly_2026-05-14T10:00:00Z",
+  "total_steps": 10,
+  "duration_ms": 420
+}
+```
+
+**UI controls:**
+
+| Control | Behavior |
+|---------|----------|
+| **Run** | `POST /plan/run` + open WS; streams step events; auto-advances |
+| **Debug** | `POST /plan/debug` + open WS; pauses at each `step_complete`; shows step detail pane with state delta and confirm button |
+| **Stop** | Sends `{"event": "abort"}` over WS; server emits `plan_aborted` and halts |
+| Step detail pane | Visible in debug mode: shows assignment, GNN score, constraint violations, capability state diff |
+
+### 10.5 Panel 4 — Operation Plan Export
+
+Generated plans are persisted as JSON files for offline analysis and GNN training data augmentation.
+
+**Plan JSON schema** (compatible with GNN training input per arXiv:2409.00968):
+```json
+{
+  "plan_id": "maze_106_assembly_2026-05-14T10:00:00Z",
+  "scenario": "MAZE_106_Assembly",
+  "initial_state_id": "degraded_R2_error",
+  "generated_at": "2026-05-14T10:00:00Z",
+  "mode": "A",
+  "steps": [
+    {
+      "step_index": 1,
+      "step_name": "Pick Start Insert",
+      "op_index": 21,
+      "assignment": {"robot_id": 1, "tool_id": 2},
+      "gnn_score": 0.93,
+      "parameter_array": [30828, 89166, -4950, 0, 80, 11, 1, 150000, 7000],
+      "constraint_violations": [],
+      "duration_ms": null
+    }
+  ],
+  "metrics": {
+    "total_steps": 10,
+    "successful_assignments": 10,
+    "fallback_used": false
+  }
+}
+```
+
+| Control | Behavior |
+|---------|----------|
+| Plan list | `GET /plans` — lists all saved plans with date, scenario, step count |
+| **Download** | Downloads plan JSON file |
+| **Delete** | `DELETE /plans/{id}` with confirm |
+| **Use for training** | Marks plan as GNN training input; adds to `data/training/` via `POST /plans/{id}/train` |
+
+### 10.6 Panel 5 — Visualization & Analysis
+
+Provides a multi-tab dashboard for comparing runs, inspecting plan structure, and monitoring GNN training progress.
+
+```mermaid
+graph TB
+    subgraph VIZ["Visualization Panel"]
+        TAB1[Process Diagram\nMermaid flowchart from plan steps]
+        TAB2[State Comparison\nInitial vs. final capability grid]
+        TAB3[Step Timeline\nGantt chart — robot × step]
+        TAB4[Statistics\nUtilization · Score distribution · Error rate]
+        TAB5[GNN Training\nLoss curves · Accuracy · Dataset size]
+        TAB6[Execution Log\nFilterable table · severity levels]
+    end
+```
+
+**Tab details:**
+
+| Tab | Data source | Chart type |
+|-----|------------|-----------|
+| Process Diagram | Plan JSON steps → auto-generated Mermaid `sequenceDiagram` | Mermaid render |
+| State Comparison | `GET /state/{id}/diff` | Side-by-side capability heatmaps (Chart.js) |
+| Step Timeline | Plan steps with robot assignments | Gantt (react-gantt or Chart.js timeline) |
+| Statistics | `GET /stats` — aggregated over all plans | Bar (utilization), histogram (score distribution) |
+| GNN Training | `GET /training/runs` | Line chart (loss + accuracy per epoch) |
+| Execution Log | `GET /history` with filters | Sortable/filterable table; severity: `info / warn / error` |
+
+**State comparison view** — inline diff of two capability states:
+```
+Capability            State A            State B (delta)
+─────────────────────────────────────────────────────────
+cap_r1_t2_pick_v      ✓ enabled          ✓ enabled
+cap_r2_t3_pick_v      ✓ enabled          ✗ disabled  ←
+cap_r1_t2_place_v     ✓ enabled          ✓ enabled
+```
+
+### 10.7 Technology Choices
+
+| Layer | Choice | Rationale |
+|-------|--------|-----------|
+| Frontend | React + TypeScript | Component model maps cleanly to the 5 panels; strong ecosystem for charts |
+| State management | Zustand | Lightweight; sufficient for panel-local + cross-panel plan state |
+| WebSocket | native browser WS + reconnect logic | Required for debug step streaming (AGDebugger pattern) |
+| Charts | Chart.js via react-chartjs-2 | Gantt, bar, line all supported; no external dependency needed |
+| Diagrams | Mermaid.js (client-side render) | Auto-generate process diagrams from plan JSON; consistent with thesis diagrams |
+| Backend | FastAPI (already in place) | SSE and WebSocket both natively supported; existing `capability_matcher` codebase |
+| Plan storage | JSON files in `data/plans/` | Simple, version-controllable, directly loadable as GNN training input |
+
+---
+
+## 11. Open Questions / Next Steps
+
+### Known / Resolved (UI)
+- [x] Digital Twin UI architecture defined — 5 panels, React + FastAPI + WebSocket (Section 10)
+- [x] Debug step-through protocol designed — WS event schema with `step_complete` / `ack` / `abort` (Section 10.4)
+- [x] Plan JSON schema defined — compatible with GNN training input format (Section 10.5)
+- [x] State configuration JSON schema defined — named snapshots with robot/capability overrides (Section 10.3)
+- [x] Visualization panel tabs defined — process diagram, state diff, Gantt, stats, GNN training, log (Section 10.6)
+
+### Known / Resolved (System)
 - [x] OPC UA address space mapped — `RICAIP_testbed_opc-ua-server.xml` (ns=4, `Root.Objects.W1`)
 - [x] Robot availability condition defined: `Enabled ∧ ¬Manually_Disabled ∧ Error_ID=0 ∧ ¬Busy ∧ Ready ∧ E-Stop_OK`
 - [x] Tool rack topology known: each robot has 4 toolchanger slots (`Toolchangers[1..4]`)
@@ -878,14 +1314,29 @@ pytest src/tests/integration/ -v --typedb     # integration (TypeDB must be runn
 - [x] `Parameter_Array` encoding per operation — index-to-parameter mapping documented for ops 21, 31, 41, 200, 201 (Section 1.4)
 - [x] Three-mode architecture defined — Mode A (R&D file-based), Mode B (OPC UA planning/dry-run), Mode C (OPC UA real execution) (Section 3)
 - [x] Operation ID corrections applied — V3 op 13 (Approach Vertical) corrected to V4 op 41; op 13 is now axis-space PTP move
+- [x] JSON entity specification defined — canonical format for Robot, Tool, Position, Capability, ProcessStep (Section 5.3)
+- [x] ETL pipeline decided: authored JSON → TypeDB for v1; AAS → JSON → TypeDB when AAS integration lands in v3
+- [x] GNN training data strategy: synthetic generation from scenario parameter grid (≥ 5 000 samples), not manual runs (Section 8.3)
 
-### Pending
-- [ ] Define AAS submodel structure for `Capability` — align with IDTA Part 2 Capability submodel spec
+### Pending (UI)
+- [ ] React frontend scaffold — 5-panel layout, routing, Zustand store
+- [ ] `POST /seed` and `POST /clear` endpoints with SSE progress stream
+- [ ] `GET/POST/PUT/DELETE /state` endpoints + JSON file persistence in `data/states/`
+- [ ] `WS /plan/stream` — WebSocket handler with `step_complete` / `ack` / `abort` events; debug vs. run mode
+- [ ] `GET/POST/DELETE /plans` + `POST /plans/{id}/train` endpoints
+- [ ] Visualization API — `/stats`, `/history`, `/training/runs`, `/state/{id}/diff`
+- [ ] Process diagram auto-generation: plan JSON steps → Mermaid `sequenceDiagram`
+- [ ] GNN training loss/accuracy chart wired to training run DB records
+
+### Pending (System)
+- [ ] ~~Define AAS submodel structure for `Capability`~~ — **deferred to v3**; v1 uses own JSON spec (Section 5.3)
 - [ ] TypeDB schema v1 — entity/relation/attribute definitions (Robot, Tool, Toolchanger, MazePosition, Capability, ProcessStep, Workcell)
-- [ ] ETL pipeline: AAS JSON → TypeDB insert transactions
+- [ ] Author JSON fixture files: `robots.json`, `tools.json`, `positions.json`, `capabilities.json`, `process_steps.json` (Section 5.3)
+- [ ] `scripts/seed_kg.py` — parse JSON fixtures and insert into TypeDB via gRPC
+- [ ] `scripts/generate_training_data.py` — parameter-grid generator, labelling rule, JSONL output (Section 8.3)
+- [ ] `scripts/train_gnn.py` — GAT training loop on generated dataset, checkpoint to `models/gat_ranker.pt`
 - [ ] OPC UA subscription client — map `ns=4` node changes to TypeDB attribute updates; use `Call_ID` for execution correlation
 - [ ] Determine robot index → ID mapping (`Robots[0]` = R1 or R2? — verify from testbed documentation)
-- [ ] GNN training dataset: run 100+ manual maze assemblies to seed `execution_history`
 - [ ] Baseline: pure TypeQL rule-based matcher (first passing robot wins, no ranking)
 - [ ] Benchmark harness: automated scenario runner + metrics collector
 - [ ] Disassembly precondition: rivet removal state must be tracked (no OPC UA node — derive from process step completion log)
@@ -895,4 +1346,4 @@ pytest src/tests/integration/ -v --typedb     # integration (TypeDB must be runn
 
 ---
 
-*Document status: Working draft — 2026-05-12*
+*Document status: Working draft — 2026-05-14*

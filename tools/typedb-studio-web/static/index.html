@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TypeDB Studio Web</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e1117;
+      --surface: #161b27;
+      --border: #2a3145;
+      --accent: #5f7af4;
+      --accent-dim: #3a4fa8;
+      --text: #d4daf0;
+      --text-dim: #7a82a0;
+      --green: #3ecf8e;
+      --red: #f04060;
+      --yellow: #f0b040;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    body { background: var(--bg); color: var(--text); font-family: sans-serif;
+           min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── header ── */
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem; height: 52px; display: flex; align-items: center; gap: 1.5rem;
+    }
+    header h1 { font-size: 1rem; font-weight: 600; letter-spacing: .03em; color: var(--text); }
+    header h1 span { color: var(--accent); }
+
+    #status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+    #status-dot.ok  { background: var(--green); }
+    #status-dot.err { background: var(--red); }
+    #status-text { font-size: .8rem; color: var(--text-dim); }
+
+    .spacer { flex: 1; }
+    #db-label { font-size: .8rem; color: var(--text-dim); }
+    #db-select {
+      background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      padding: .3rem .6rem; border-radius: 4px; font-size: .85rem; cursor: pointer;
+    }
+    #db-select:focus { outline: none; border-color: var(--accent); }
+
+    /* ── main layout ── */
+    main { flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 0; }
+
+    /* ── toolbar ── */
+    .toolbar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: .5rem 1.5rem; display: flex; align-items: center; gap: .75rem;
+    }
+    .tx-btn {
+      padding: .3rem .85rem; border: 1px solid var(--border); border-radius: 4px;
+      background: transparent; color: var(--text-dim); font-size: .8rem; cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    .tx-btn:hover  { border-color: var(--accent); color: var(--text); }
+    .tx-btn.active { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+
+    #run-btn {
+      margin-left: auto; padding: .35rem 1.1rem; background: var(--accent);
+      border: none; border-radius: 4px; color: #fff; font-size: .85rem;
+      font-weight: 600; cursor: pointer; transition: background .15s;
+    }
+    #run-btn:hover    { background: var(--accent-dim); }
+    #run-btn:disabled { background: var(--border); cursor: default; }
+
+    kbd {
+      display: inline-block; padding: .1rem .4rem; border: 1px solid var(--border);
+      border-radius: 3px; font-size: .75rem; color: var(--text-dim);
+    }
+
+    /* ── panels ── */
+    .panels { display: grid; grid-template-columns: 1fr 1fr; height: 100%; }
+
+    .panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+    .panel:last-child { border-right: none; }
+
+    .panel-title {
+      padding: .4rem 1rem; font-size: .72rem; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    #query-editor {
+      flex: 1; background: var(--bg); color: var(--text); font-family: var(--font-mono);
+      font-size: .88rem; line-height: 1.6; padding: 1rem; border: none; resize: none;
+      outline: none; tab-size: 2;
+    }
+    #query-editor::placeholder { color: var(--text-dim); }
+
+    /* ── results ── */
+    #results-panel { overflow: auto; }
+
+    #results-meta {
+      padding: .35rem 1rem; font-size: .78rem; color: var(--text-dim);
+      border-bottom: 1px solid var(--border); background: var(--surface);
+      display: flex; align-items: center; gap: .75rem; min-height: 32px;
+    }
+    .badge {
+      display: inline-block; padding: .1rem .5rem; border-radius: 3px;
+      font-size: .75rem; font-weight: 600;
+    }
+    .badge-ok  { background: #1a3d2a; color: var(--green); }
+    .badge-err { background: #3d1a1a; color: var(--red); }
+
+    #results-body { padding: 1rem; overflow: auto; height: 100%; }
+
+    /* table */
+    table { border-collapse: collapse; font-size: .82rem; font-family: var(--font-mono);
+            width: 100%; }
+    th { background: var(--surface); color: var(--text-dim); text-align: left;
+         padding: .4rem .75rem; border-bottom: 1px solid var(--border);
+         font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; }
+    td { padding: .35rem .75rem; border-bottom: 1px solid var(--border); color: var(--text);
+         vertical-align: top; max-width: 320px; word-break: break-word; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #ffffff07; }
+
+    .val-iid   { color: var(--text-dim); font-size: .75rem; }
+    .val-type  { color: var(--accent); }
+    .val-value { color: var(--yellow); }
+
+    .empty-msg { color: var(--text-dim); font-size: .85rem; padding: .5rem 0; }
+    .error-msg { color: var(--red); font-family: var(--font-mono); font-size: .85rem;
+                 white-space: pre-wrap; }
+
+    /* spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin .6s linear infinite; flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>TypeDB <span>Studio</span> Web</h1>
+  <div id="status-dot"></div>
+  <span id="status-text">connecting…</span>
+  <div class="spacer"></div>
+  <span id="db-label">Database:</span>
+  <select id="db-select"><option value="">— none —</option></select>
+</header>
+
+<main>
+  <div class="toolbar">
+    <span style="font-size:.8rem;color:var(--text-dim)">Transaction:</span>
+    <button class="tx-btn active" data-tx="read">read</button>
+    <button class="tx-btn"        data-tx="write">write</button>
+    <button class="tx-btn"        data-tx="schema">schema</button>
+    <div class="spacer"></div>
+    <kbd>Ctrl+Enter</kbd>
+    <button id="run-btn" disabled>▶ Run</button>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-title">TypeQL Query</div>
+      <textarea id="query-editor" spellcheck="false"
+        placeholder="match $r isa robot, has robot-id $id; get $r, $id;"></textarea>
+    </div>
+
+    <div class="panel" id="results-panel">
+      <div class="panel-title" style="display:flex;justify-content:space-between">
+        <span>Results</span>
+        <span id="results-meta"></span>
+      </div>
+      <div id="results-body">
+        <p class="empty-msg">Run a query to see results.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const dbSelect   = document.getElementById('db-select');
+  const statusDot  = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  const editor     = document.getElementById('query-editor');
+  const runBtn     = document.getElementById('run-btn');
+  const resMeta    = document.getElementById('results-meta');
+  const resBody    = document.getElementById('results-body');
+  const txBtns     = document.querySelectorAll('.tx-btn');
+
+  let selectedTx = 'read';
+
+  txBtns.forEach(btn => btn.addEventListener('click', () => {
+    txBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTx = btn.dataset.tx;
+  }));
+
+  // Ctrl+Enter to run
+  editor.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runQuery(); }
+  });
+  runBtn.addEventListener('click', runQuery);
+
+  async function loadStatus() {
+    try {
+      const r = await fetch('/api/status');
+      const d = await r.json();
+      if (d.connected) {
+        statusDot.className = 'ok';
+        statusText.textContent = `${d.host}:${d.port}`;
+        populateDbs(d.databases);
+        runBtn.disabled = false;
+      } else {
+        statusDot.className = 'err';
+        statusText.textContent = d.error || 'disconnected';
+      }
+    } catch {
+      statusDot.className = 'err';
+      statusText.textContent = 'unreachable';
+    }
+  }
+
+  function populateDbs(dbs) {
+    const prev = dbSelect.value;
+    dbSelect.innerHTML = dbs.length
+      ? dbs.map(db => `<option value="${db}">${db}</option>`).join('')
+      : '<option value="">— no databases —</option>';
+    if (prev && dbs.includes(prev)) dbSelect.value = prev;
+  }
+
+  async function runQuery() {
+    const query = editor.value.trim();
+    const db    = dbSelect.value;
+    if (!query || !db) return;
+
+    runBtn.disabled = true;
+    resMeta.innerHTML = '<div class="spinner"></div>';
+    resBody.innerHTML  = '';
+
+    const t0 = performance.now();
+    try {
+      const resp = await fetch('/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ db, query, tx_type: selectedTx }),
+      });
+      const data = await resp.json();
+      const ms   = Math.round(performance.now() - t0);
+
+      if (data.ok) {
+        resMeta.innerHTML =
+          `<span class="badge badge-ok">OK</span> ${data.count} row(s) · ${ms}ms`;
+        renderRows(data.rows);
+      } else {
+        resMeta.innerHTML = `<span class="badge badge-err">ERROR</span> ${ms}ms`;
+        resBody.innerHTML = `<pre class="error-msg">${escHtml(data.error)}</pre>`;
+      }
+    } catch (err) {
+      resMeta.innerHTML = `<span class="badge badge-err">NETWORK ERROR</span>`;
+      resBody.innerHTML = `<pre class="error-msg">${escHtml(String(err))}</pre>`;
+    } finally {
+      runBtn.disabled = false;
+    }
+  }
+
+  function renderRows(rows) {
+    if (!rows.length) {
+      resBody.innerHTML = '<p class="empty-msg">Query executed — no rows returned.</p>';
+      return;
+    }
+    const cols = [...new Set(rows.flatMap(r => Object.keys(r)))];
+    const ths  = cols.map(c => `<th>${escHtml(c)}</th>`).join('');
+    const trs  = rows.map(row => {
+      const tds = cols.map(col => {
+        const v = row[col];
+        if (v === null || v === undefined) return '<td><span class="val-iid">null</span></td>';
+        if (typeof v === 'object') {
+          let cell = '';
+          if (v.type)  cell += `<span class="val-type">${escHtml(v.type)}</span> `;
+          if ('value' in v && v.value !== undefined)
+            cell += `<span class="val-value">${escHtml(String(v.value))}</span>`;
+          else if (v.iid)
+            cell += `<span class="val-iid">${escHtml(v.iid)}</span>`;
+          return `<td>${cell}</td>`;
+        }
+        return `<td>${escHtml(String(v))}</td>`;
+      }).join('');
+      return `<tr>${tds}</tr>`;
+    }).join('');
+    resBody.innerHTML = `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // poll status every 10s
+  loadStatus();
+  setInterval(loadStatus, 10_000);
+</script>
+</body>
+</html>

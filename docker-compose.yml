@@ -1,0 +1,119 @@
+name: thesis
+
+services:
+
+  typedb:
+    container_name: typedb
+    image: typedb/typedb:3.10.4
+    ports:
+      - "1729:1729"
+      - "8000:8000"
+    volumes:
+      - typedb_data:/opt/typedb-all-linux/server/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/1729' 2>/dev/null && echo ok || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+          cpus: "2.0"
+
+  opcua-mock:
+    container_name: opcua-mock
+    build:
+      context: ./mock/opcua-mock
+      dockerfile: Dockerfile
+    ports:
+      - "4840:4840"
+    environment:
+      - MOCK_CONFIG=/app/config/montrac_mock.json
+    profiles:
+      - mock
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+
+  capability-matcher:
+    container_name: capability-matcher
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - TYPEDB_HOST=typedb
+      - TYPEDB_PORT=8000
+      - TYPEDB_DB=capability_kg
+      - TYPEDB_USERNAME=${TYPEDB_USERNAME:-admin}
+      - TYPEDB_PASSWORD=${TYPEDB_PASSWORD:-password}
+      - OPCUA_ENDPOINT=opc.tcp://opcua-mock:4840/ricaip
+      - MODE=${MODE:-A}
+      - DATA_DIR=/data
+      - GNN_MODEL_PATH=/models/gat_ranker.pt
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./data:/data
+      - ./models:/models:ro
+      - ./resources:/resources:ro
+    depends_on:
+      typedb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
+
+  typedb-studio-web:
+    container_name: typedb-studio-web
+    build:
+      context: ./tools/typedb-studio-web
+      dockerfile: Dockerfile
+    ports:
+      - "8889:8889"
+    environment:
+      - TYPEDB_HOST=typedb
+      - TYPEDB_PORT=${TYPEDB_PORT:-1729}
+      - TYPEDB_USERNAME=${TYPEDB_USERNAME:-admin}
+      - TYPEDB_PASSWORD=${TYPEDB_PASSWORD:-password}
+    depends_on:
+      typedb:
+        condition: service_healthy
+    profiles:
+      - studio
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.25"
+
+  digital-twin:
+    container_name: digital-twin
+    build:
+      context: ./src
+      dockerfile: Dockerfile.tracking
+    ports:
+      - "8765:8765"
+    environment:
+      - MODE=${MODE:-A}
+      - OPCUA_ENDPOINT=opc.tcp://opcua-mock:4840/ricaip
+    volumes:
+      - ./resources:/resources:ro
+    depends_on:
+      - capability-matcher
+    profiles:
+      - full
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+
+volumes:
+  typedb_data:

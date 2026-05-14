@@ -1,0 +1,168 @@
+{
+  "product": "MAZE_106",
+  "variant": "Assembly",
+  "steps": [
+    {
+      "step_index": 1,
+      "step_name": "Pick START Insert",
+      "op_index": 21,
+      "component": "START-INSERT_106",
+      "position_name": "maze_106_pick_insert_start",
+      "preconditions": [],
+      "postconditions": ["start_insert_in_gripper"]
+    },
+    {
+      "step_index": 2,
+      "step_name": "Place START Insert",
+      "op_index": 31,
+      "component": "START-INSERT_106",
+      "position_name": "maze_106_place_insert_start",
+      "preconditions": ["start_insert_in_gripper"],
+      "postconditions": ["start_insert_placed"]
+    },
+    {
+      "step_index": 3,
+      "step_name": "Pick FINISH Insert",
+      "op_index": 21,
+      "component": "FINISH-INSERT_106",
+      "position_name": "maze_106_pick_insert_finish",
+      "preconditions": ["start_insert_placed"],
+      "postconditions": ["finish_insert_in_gripper"]
+    },
+    {
+      "step_index": 4,
+      "step_name": "Place FINISH Insert",
+      "op_index": 31,
+      "component": "FINISH-INSERT_106",
+      "position_name": "maze_106_place_insert_finish",
+      "preconditions": ["finish_insert_in_gripper"],
+      "postconditions": ["finish_insert_placed"]
+    },
+    {
+      "step_index": 5,
+      "step_name": "Pick LOGO Insert",
+      "op_index": 21,
+      "component": "LOGO-INSERT_106-RICAIP",
+      "position_name": "maze_106_pick_insert_logo",
+      "preconditions": ["finish_insert_placed"],
+      "postconditions": ["logo_insert_in_gripper"]
+    },
+    {
+      "step_index": 6,
+      "step_name": "Place LOGO Insert",
+      "op_index": 31,
+      "component": "LOGO-INSERT_106-RICAIP",
+      "position_name": "maze_106_place_insert_logo",
+      "preconditions": ["logo_insert_in_gripper"],
+      "postconditions": ["logo_insert_placed"]
+    },
+    {
+      "step_index": 7,
+      "step_name": "Pick Ball",
+      "op_index": 21,
+      "component": "BALL_106",
+      "position_name": "maze_106_pick_glass",
+      "preconditions": ["logo_insert_placed"],
+      "postconditions": ["ball_in_gripper"]
+    },
+    {
+      "step_index": 8,
+      "step_name": "Drop Ball",
+      "op_index": 41,
+      "component": "BALL_106",
+      "position_name": "maze_106_place_glass",
+      "preconditions": ["ball_in_gripper"],
+      "postconditions": ["ball_placed"]
+    },
+    {
+      "step_index": 9,
+      "step_name": "Pick Cover",
+      "op_index": 21,
+      "component": "COVER_106",
+      "position_name": "maze_106_storage_glass",
+      "preconditions": ["ball_placed"],
+      "postconditions": ["cover_in_gripper"]
+    },
+    {
+      "step_index": 10,
+      "step_name": "Place Cover",
+      "op_index": 31,
+      "component": "COVER_106",
+      "position_name": "maze_106_place_glass",
+      "preconditions": ["cover_in_gripper"],
+      "postconditions": ["cover_placed"]
+    },
+    {
+      "step_index": 11,
+      "step_name": "Place Rivet 1",
+      "op_index": 41,
+      "component": "SNAP-RIVET_106",
+      "position_name": "maze_106_place_rivet_1",
+      "preconditions": ["cover_placed"],
+      "postconditions": ["rivet_1_placed"]
+    },
+    {
+      "step_index": 12,
+      "step_name": "Push Rivet 1",
+      "op_index": 41,
+      "component": "SNAP-RIVET_106",
+      "position_name": "maze_106_push_in_rivet_1",
+      "preconditions": ["rivet_1_placed"],
+      "postconditions": ["rivet_1_fastened"]
+    },
+    {
+      "step_index": 13,
+      "step_name": "Place Rivet 2",
+      "op_index": 41,
+      "component": "SNAP-RIVET_106",
+      "position_name": "maze_106_place_rivet_2",
+      "preconditions": ["rivet_1_fastened"],
+      "postconditions": ["rivet_2_placed"]
+    },
+    {
+      "step_index": 14,
+      "step_name": "Push Rivet 2",
+      "op_index": 41,
+      "component": "SNAP-RIVET_106",
+      "position_name": "maze_106_push_in_rivet_2",
+      "preconditions": ["rivet_2_placed"],
+      "postconditions": ["rivet_2_fastened"]
+    },
+    {
+      "step_index": 15,
+      "step_name": "Place Rivet 3",
+      "op_index": 41,
+      "component": "SNAP-RIVET_106",
+      "position_name": "maze_106_place_rivet_3",
+      "preconditions": ["rivet_2_fastened"],
+      "postconditions": ["rivet_3_placed"]
+    },
+    {
+      "step_index": 16,
+      "step_name": "Push Rivet 3",
+      "op_index": 41,
+      "component": "SNAP-RIVET_106",
+      "position_name": "maze_106_push_in_rivet_3",
+      "preconditions": ["rivet_3_placed"],
+      "postconditions": ["rivet_3_fastened"]
+    },
+    {
+      "step_index": 17,
+      "step_name": "Place Rivet 4",
+      "op_index": 41,
+      "component": "SNAP-RIVET_106",
+      "position_name": "maze_106_place_rivet_4",
+      "preconditions": ["rivet_3_fastened"],
+      "postconditions": ["rivet_4_placed"]
+    },
+    {
+      "step_index": 18,
+      "step_name": "Push Rivet 4",
+      "op_index": 41,
+      "component": "SNAP-RIVET_106",
+      "position_name": "maze_106_push_in_rivet_4",
+      "preconditions": ["rivet_4_placed"],
+      "postconditions": ["rivet_4_fastened", "maze_106_assembly_complete"]
+    }
+  ]
+}

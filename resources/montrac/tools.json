@@ -1,0 +1,92 @@
+[
+  {
+    "tool_id": 1,
+    "label": "T1",
+    "model": "Calibration needle",
+    "type": "calibration",
+    "can_grip": false,
+    "can_reference": false,
+    "grip_range_um": [0, 0],
+    "payload_kg": 0.0
+  },
+  {
+    "tool_id": 2,
+    "label": "T2",
+    "model": "EGI-40",
+    "type": "electric_finger",
+    "can_grip": true,
+    "can_reference": true,
+    "grip_range_um": [0, 40000],
+    "payload_kg": 1.5
+  },
+  {
+    "tool_id": 3,
+    "label": "T3",
+    "model": "EGL-90",
+    "type": "electric_finger",
+    "can_grip": true,
+    "can_reference": true,
+    "grip_range_um": [0, 90000],
+    "payload_kg": 3.0
+  },
+  {
+    "tool_id": 7,
+    "label": "T7",
+    "model": "EGL-90",
+    "type": "electric_finger",
+    "can_grip": true,
+    "can_reference": true,
+    "grip_range_um": [0, 90000],
+    "payload_kg": 3.0
+  },
+  {
+    "tool_id": 8,
+    "label": "T8",
+    "model": "PGN+P100-1",
+    "type": "pneumatic_finger",
+    "can_grip": true,
+    "can_reference": false,
+    "grip_range_um": [0, 100000],
+    "payload_kg": 4.0
+  },
+  {
+    "tool_id": 9,
+    "label": "T9",
+    "model": "PGN+P100-1",
+    "type": "pneumatic_finger",
+    "can_grip": true,
+    "can_reference": false,
+    "grip_range_um": [0, 100000],
+    "payload_kg": 4.0
+  },
+  {
+    "tool_id": 10,
+    "label": "T10",
+    "model": "Suction cup",
+    "type": "suction",
+    "can_grip": true,
+    "can_reference": false,
+    "grip_range_um": [0, 0],
+    "payload_kg": 2.0
+  },
+  {
+    "tool_id": 12,
+    "label": "T12",
+    "model": "PGN+P64-1",
+    "type": "pneumatic_finger",
+    "can_grip": true,
+    "can_reference": false,
+    "grip_range_um": [0, 64000],
+    "payload_kg": 2.5
+  },
+  {
+    "tool_id": 16,
+    "label": "T16",
+    "model": "EGI-80",
+    "type": "electric_finger",
+    "can_grip": true,
+    "can_reference": true,
+    "grip_range_um": [0, 80000],
+    "payload_kg": 2.0
+  }
+]

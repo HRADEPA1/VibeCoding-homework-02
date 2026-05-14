@@ -1,0 +1,17 @@
+{
+  "endpoint": "opc.tcp://0.0.0.0:4840/ricaip",
+  "namespace": "http://prague.ti40.cz/factory/",
+  "robots": [
+    {"index": 0, "id": 1, "label": "R1", "tool_id": 2,  "tool_attached": true},
+    {"index": 1, "id": 2, "label": "R2", "tool_id": 10, "tool_attached": true},
+    {"index": 2, "id": 3, "label": "R3", "tool_id": 2,  "tool_attached": true}
+  ],
+  "toolchangers_per_robot": 4,
+  "op_durations_s": {
+    "10": 2.0, "11": 1.5, "12": 1.2, "13": 0.8,
+    "20": 3.2, "21": 2.8, "30": 3.0, "31": 2.6,
+    "40": 1.8, "41": 1.5, "50": 1.0, "51": 0.4,
+    "200": 3.8, "201": 4.2
+  },
+  "failure_probability": 0.05
+}

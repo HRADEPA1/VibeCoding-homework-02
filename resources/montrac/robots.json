@@ -1,0 +1,38 @@
+[
+  {
+    "robot_id": 1,
+    "label": "R1",
+    "model": "KUKA Agilus 2",
+    "supported_ops": [10, 11, 12, 13, 20, 21, 30, 31, 40, 41, 50, 51, 200, 201],
+    "toolchangers": [
+      {"slot": 1, "tool_id": 2},
+      {"slot": 2, "tool_id": 3},
+      {"slot": 3, "tool_id": 7},
+      {"slot": 4, "tool_id": 8}
+    ]
+  },
+  {
+    "robot_id": 2,
+    "label": "R2",
+    "model": "KUKA Agilus 2",
+    "supported_ops": [10, 11, 12, 13, 20, 21, 30, 31, 40, 41, 50, 51, 200, 201],
+    "toolchangers": [
+      {"slot": 1, "tool_id": 9},
+      {"slot": 2, "tool_id": 10},
+      {"slot": 3, "tool_id": 12},
+      {"slot": 4, "tool_id": 16}
+    ]
+  },
+  {
+    "robot_id": 3,
+    "label": "R3",
+    "model": "KUKA Agilus 2",
+    "supported_ops": [10, 11, 12, 13, 20, 21, 30, 31, 40, 41, 50, 51, 200, 201],
+    "toolchangers": [
+      {"slot": 1, "tool_id": 2},
+      {"slot": 2, "tool_id": 8},
+      {"slot": 3, "tool_id": 12},
+      {"slot": 4, "tool_id": 16}
+    ]
+  }
+]

@@ -1,0 +1,161 @@
+define
+
+# ── Entity types ─────────────────────────────────────────────────────────────
+
+entity robot,
+    owns robot-id @key,
+    owns robot-label,
+    owns robot-model,
+    owns enabled,
+    owns busy,
+    owns ready,
+    owns error-id,
+    owns manually-disabled,
+    owns in-home,
+    owns tool-attached,
+    owns active-base-id,
+    owns active-tool-id,
+    owns op-index @card(0..);
+
+entity tool,
+    owns tool-id @key,
+    owns tool-label,
+    owns tool-model,
+    owns tool-type,
+    owns can-grip,
+    owns can-reference,
+    owns grip-range-min,
+    owns grip-range-max,
+    owns payload-kg;
+
+entity toolchanger-slot,
+    owns slot-index,
+    owns tool-id;
+
+entity maze-position,
+    owns position-name @key,
+    owns description,
+    owns x-mm,
+    owns y-mm,
+    owns z-mm,
+    owns a-deg,
+    owns b-deg,
+    owns c-deg;
+
+entity capability,
+    owns capability-id @key,
+    owns capability-type,
+    owns op-index;
+
+entity process-step,
+    owns step-index @key,
+    owns step-name,
+    owns op-index,
+    owns component,
+    owns position-name,
+    owns precondition @card(0..),
+    owns postcondition @card(0..);
+
+entity workcell,
+    owns estop-ok,
+    owns conveyor-running;
+
+# ── Relation types ───────────────────────────────────────────────────────────
+
+relation mounted-on,
+    relates tool,
+    relates robot;
+
+relation in-slot,
+    relates slot,
+    relates owner-robot;
+
+relation valid-tool-at,
+    relates capability-tool,
+    relates position,
+    owns open-position;
+
+relation valid-base-at,
+    relates positioned-robot,
+    relates position,
+    owns base-id;
+
+relation robot-has-capability,
+    relates owner-robot,
+    relates capability;
+
+relation step-requires-position,
+    relates step,
+    relates position;
+
+# ── Attribute types ──────────────────────────────────────────────────────────
+
+attribute robot-id,        value integer;
+attribute robot-label,     value string;
+attribute robot-model,     value string;
+attribute enabled,         value boolean;
+attribute busy,            value boolean;
+attribute ready,           value boolean;
+attribute error-id,        value integer;
+attribute manually-disabled, value boolean;
+attribute in-home,         value boolean;
+attribute tool-attached,   value boolean;
+attribute active-base-id,  value integer;
+attribute active-tool-id,  value integer;
+
+attribute tool-id,         value integer;
+attribute tool-label,      value string;
+attribute tool-model,      value string;
+attribute tool-type,       value string;
+attribute can-grip,        value boolean;
+attribute can-reference,   value boolean;
+attribute grip-range-min,  value integer;
+attribute grip-range-max,  value integer;
+attribute payload-kg,      value double;
+
+attribute slot-index,      value integer;
+
+attribute position-name,   value string;
+attribute description,     value string;
+attribute x-mm,            value double;
+attribute y-mm,            value double;
+attribute z-mm,            value double;
+attribute a-deg,           value double;
+attribute b-deg,           value double;
+attribute c-deg,           value double;
+attribute approach-offset, value integer;
+attribute open-position,   value integer;
+attribute base-id,         value integer;
+
+attribute capability-id,   value string;
+attribute op-index,        value integer;
+attribute capability-type, value string;
+
+attribute step-index,      value integer;
+attribute step-name,       value string;
+attribute component,       value string;
+attribute precondition,    value string;
+attribute postcondition,   value string;
+
+attribute estop-ok,        value boolean;
+attribute conveyor-running, value boolean;
+
+# ── Role assignments ─────────────────────────────────────────────────────────
+
+robot plays mounted-on:robot;
+tool  plays mounted-on:tool;
+
+toolchanger-slot plays in-slot:slot;
+robot            plays in-slot:owner-robot;
+
+tool          plays valid-tool-at:capability-tool;
+maze-position plays valid-tool-at:position;
+
+robot         plays valid-base-at:positioned-robot;
+maze-position plays valid-base-at:position;
+
+robot      plays robot-has-capability:owner-robot;
+capability plays robot-has-capability:capability;
+
+process-step  plays step-requires-position:step;
+maze-position plays step-requires-position:position;

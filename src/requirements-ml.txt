@@ -1,0 +1,5 @@
+# ML dependencies for GNN ranker training — install separately
+# pip install -r requirements-ml.txt
+torch>=2.3.0
+torch_geometric>=2.5.0
+numpy>=1.26.0

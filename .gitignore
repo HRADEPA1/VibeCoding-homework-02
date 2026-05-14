@@ -1,2 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Secrets & credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+id_rsa
+id_ed25519
+*.p12
+
+# Data & generated files
+data/
+models/
+*.db
+*.sqlite
+*.sqlite3
+
+# Training output
+data/training/
+
+# IDE & OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker build cache
+.dockerignore
+
+# Claude internal
 mcp-servers/.DS_Store
 .claude/session-notes.md
+
+# Logs
+*.log
+.claude/logs/
+.claude/logs/agent.log
+.claude/logs/agent.log
