@@ -5,77 +5,355 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RICAIP Digital Twin</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
-<!-- ── Top bar ──────────────────────────────────────────────────────────── -->
+<!-- ── Header ────────────────────────────────────────────────────────────── -->
 <header>
   <div class="logo">RICAIP <span>Digital Twin</span></div>
-  <span id="mode-badge" class="mode-badge mode-A">MODE A</span>
-  <span id="plan-status" class="plan-status ps-idle">IDLE</span>
+  <span id="ws-dot" class="ws-dot" title="WebSocket status"></span>
+  <span id="plan-status-badge" class="plan-status ps-idle" style="display:none">IDLE</span>
   <div class="spacer"></div>
-  <div class="controls">
-    <select id="mode-select" class="btn" title="Execution mode">
-      <option value="A">Mode A — R&amp;D (file-based)</option>
-      <option value="B">Mode B — Planning (dry-run)</option>
-      <option value="C">Mode C — Real OPC UA</option>
-    </select>
-    <button id="btn-load"  class="btn">⬇ Load Plan</button>
-    <button id="btn-start" class="btn btn-primary" disabled>▶ Start</button>
-    <button id="btn-pause" class="btn btn-warn"    disabled>⏸ Pause</button>
-    <button id="btn-reset" class="btn btn-danger"  disabled>↺ Reset</button>
-    <span id="ws-dot" class="ws-dot" title="WebSocket status"></span>
-  </div>
+  <div id="header-mode" class="mode-badge mode-A" style="display:none">MODE A</div>
 </header>
 
-<!-- ── Main ─────────────────────────────────────────────────────────────── -->
-<div class="main">
+<!-- ── Tab bar ───────────────────────────────────────────────────────────── -->
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="seed">Seed</button>
+  <button class="tab-btn" data-tab="state">State</button>
+  <button class="tab-btn" data-tab="plan">Plan</button>
+  <button class="tab-btn" data-tab="export">Export</button>
+  <button class="tab-btn" data-tab="visualize">Visualize</button>
+</nav>
 
-  <!-- Left: Robot states -->
-  <div class="panel">
-    <div class="panel-title">Robots</div>
-    <div class="panel-body" id="robots-panel">
-      <p class="empty-msg">Connecting…</p>
-    </div>
-    <div class="workcell-bar">
-      <span id="estop-ind"   class="indicator active-ind" title="Click to toggle E-Stop">
-        <span class="ind-dot"></span>E-Stop OK
-      </span>
-      <span id="conveyor-ind" class="indicator active-ind" title="Click to toggle conveyor">
-        <span class="ind-dot"></span>Conveyor Running
-      </span>
-    </div>
-  </div>
+<!-- ── Toast ─────────────────────────────────────────────────────────────── -->
+<div id="toast-container"></div>
 
-  <!-- Center: Plan steps -->
-  <div class="panel" style="border-right:1px solid var(--border)">
-    <div class="panel-title">Assembly Plan — MAZE_106</div>
-    <div class="progress-wrap">
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+<!-- ── Tab content ───────────────────────────────────────────────────────── -->
+<div id="tab-content">
+
+  <!-- ── Panel: Seed ──────────────────────────────────────────────────────── -->
+  <div class="tab-panel active" id="tab-seed">
+    <div class="panel-grid">
+      <div class="panel-section">
+        <div class="section-title">TypeDB Knowledge Graph</div>
+        <div class="section-body">
+          <p class="muted-text" style="margin-bottom:12px">
+            Seed the TypeDB instance with robots, tools, positions, and process steps from JSON fixtures.
+          </p>
+          <div class="btn-row" style="margin-bottom:16px">
+            <button id="btn-seed" class="btn btn-primary">Seed Database</button>
+            <button id="btn-clear" class="btn btn-danger">Clear Database</button>
+          </div>
+          <div id="seed-progress-wrap" style="display:none">
+            <div class="progress-bar-bg" style="margin-bottom:8px">
+              <div class="progress-bar-fill" id="seed-progress-fill" style="width:0%"></div>
+            </div>
+            <div id="seed-status-text" class="muted-text" style="font-size:11px;margin-bottom:12px">Seeding...</div>
+          </div>
+          <div id="seed-entity-counts" class="entity-counts"></div>
+        </div>
       </div>
-      <div class="progress-text" id="progress-text">—</div>
-    </div>
-    <div class="panel-body" id="plan-panel" style="padding:0">
-      <p class="empty-msg">Load a plan to begin.</p>
-    </div>
-  </div>
 
-  <!-- Right: Active op + event log -->
-  <div class="panel" style="border-right:none">
-    <div class="panel-title">Operation Details</div>
-    <div class="panel-body" style="display:flex;flex-direction:column;gap:0;padding:10px">
-      <!-- Active operation card -->
-      <div id="active-op"></div>
-      <!-- Event log -->
-      <div class="event-log">
-        <div class="active-op-title">Event Log</div>
-        <div class="log-body" id="log-body"></div>
+      <div class="panel-section">
+        <div class="section-title">Seed Log</div>
+        <div class="section-body" style="padding:0">
+          <div class="log-scroll" id="seed-log"></div>
+        </div>
       </div>
     </div>
   </div>
 
-</div>
+  <!-- ── Panel: State ─────────────────────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-state">
+    <div class="panel-grid two-col">
+      <!-- Left: State list -->
+      <div class="panel-section">
+        <div class="section-title">Saved States</div>
+        <div class="section-body" style="padding:0">
+          <div class="state-list-header">
+            <button id="btn-refresh-states" class="btn" style="font-size:11px">Refresh</button>
+          </div>
+          <div id="state-list" class="state-list"></div>
+        </div>
+      </div>
+      <!-- Right: State editor -->
+      <div class="panel-section">
+        <div class="section-title">Robot Capability State Editor</div>
+        <div class="section-body">
+          <div class="form-row" style="margin-bottom:10px">
+            <label class="form-label">State ID</label>
+            <input id="state-id-input" class="form-input" placeholder="my_state_001" />
+          </div>
+          <div class="form-row" style="margin-bottom:10px">
+            <label class="form-label">Description</label>
+            <input id="state-desc-input" class="form-input" placeholder="Description of this state..." />
+          </div>
+          <div class="section-subtitle" style="margin-bottom:8px">Robot States</div>
+          <div id="robot-state-grid" class="state-grid"></div>
+          <div class="section-subtitle" style="margin:14px 0 8px">Product Components</div>
+          <div id="components-state-grid" class="state-grid"></div>
+          <div class="btn-row" style="margin-top:12px">
+            <button id="btn-save-state" class="btn btn-primary">Save State</button>
+            <button id="btn-clear-editor" class="btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Panel: Plan ──────────────────────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-plan">
+    <div class="panel-grid two-col">
+      <!-- Left: Generate + Controls + step list -->
+      <div>
+
+        <!-- Generate Plan card -->
+        <div class="panel-section" style="margin-bottom:12px">
+          <div class="section-title">Generate Plan</div>
+          <div class="section-body">
+            <div class="form-row" style="margin-bottom:10px">
+              <label class="form-label">Method</label>
+              <div class="method-btns" id="gen-method-btns">
+                <button class="btn method-btn active" data-method="typedb">a) TypeDB only</button>
+                <button class="btn method-btn" data-method="typedb_gnn">b) TypeDB + GNN</button>
+                <button class="btn method-btn" data-method="gnn">c) GNN only</button>
+              </div>
+            </div>
+            <div class="form-row" style="margin-bottom:12px">
+              <label class="form-label">Initial State</label>
+              <select id="gen-state-select" class="form-select" style="flex:1">
+                <option value="">— current twin state —</option>
+              </select>
+            </div>
+            <div class="btn-row">
+              <button id="btn-generate" class="btn btn-primary">Generate</button>
+              <span id="gen-spinner" class="muted-text" style="display:none;font-size:11px">Generating…</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section" style="margin-bottom:12px">
+          <div class="section-title">Plan Control</div>
+          <div class="section-body">
+            <div class="form-row" style="margin-bottom:10px">
+              <label class="form-label">Execution Mode</label>
+              <select id="mode-select" class="form-select">
+                <option value="A">Mode A — R&amp;D (file-based)</option>
+                <option value="B">Mode B — Planning (dry-run)</option>
+                <option value="C">Mode C — Real OPC UA</option>
+              </select>
+            </div>
+            <div class="form-row" style="margin-bottom:12px;align-items:center;gap:8px">
+              <label class="form-label" style="margin-bottom:0">Debug Mode</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="debug-toggle">
+                <span class="toggle-slider"></span>
+              </label>
+              <span id="debug-mode-label" class="muted-text" style="font-size:11px">Off — steps run continuously</span>
+            </div>
+            <div class="form-row" style="margin-bottom:10px">
+              <label class="form-label">Plan</label>
+              <select id="saved-plan-select" class="form-select" style="flex:1">
+                <option value="">— default (MAZE_106 built-in) —</option>
+              </select>
+              <button id="btn-refresh-plan-list" class="btn" style="font-size:11px;padding:2px 8px;margin-left:4px" title="Refresh plan list">↻</button>
+            </div>
+            <div class="form-row" style="margin-bottom:12px">
+              <label class="form-label">Initial State</label>
+              <select id="plan-state-select" class="form-select" style="flex:1">
+                <option value="">— keep current twin state —</option>
+              </select>
+              <button id="btn-refresh-plan-states" class="btn" style="font-size:11px;padding:2px 8px;margin-left:4px" title="Refresh state list">↻</button>
+              <button id="btn-apply-state" class="btn btn-success" style="font-size:11px;padding:2px 10px;margin-left:4px">Set State</button>
+            </div>
+            <div class="btn-row">
+              <button id="btn-load" class="btn">Load Plan</button>
+              <button id="btn-start" class="btn btn-primary" disabled>Start</button>
+              <button id="btn-pause" class="btn btn-warn" disabled>Pause</button>
+              <button id="btn-reset" class="btn btn-danger" disabled>Reset</button>
+              <button id="btn-download-log" class="btn" style="display:none" title="Download execution log">⬇ Log</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">
+            Plan Steps
+            <span id="plan-progress-text" class="muted-text" style="font-size:10px;font-weight:400;margin-left:8px"></span>
+          </div>
+          <div class="section-body" style="padding:0">
+            <div class="progress-bar-bg" style="margin:8px 12px 0">
+              <div class="progress-bar-fill" id="plan-progress-fill" style="width:0%"></div>
+            </div>
+            <div id="plan-steps-list" class="steps-list">
+              <p class="empty-msg">Load a plan to begin.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Generated plan editor + Active op + debug pane -->
+      <div>
+
+        <!-- Generated plan editor — hidden until a plan is generated -->
+        <div class="panel-section" style="margin-bottom:12px;display:none" id="gen-plan-section">
+          <div class="section-title">
+            Generated Plan
+            <span id="gen-plan-meta" class="muted-text" style="font-size:10px;font-weight:400;margin-left:8px"></span>
+          </div>
+          <div class="section-body" style="padding:0">
+            <div id="gen-plan-steps" class="steps-list"></div>
+          </div>
+          <div class="section-body" style="padding:8px 12px;border-top:1px solid var(--border)">
+            <div class="btn-row">
+              <button id="btn-gen-save"   class="btn btn-success">Save Plan</button>
+              <button id="btn-gen-load"   class="btn">Load into Executor</button>
+              <button id="btn-gen-clear"  class="btn btn-danger">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section" style="margin-bottom:12px" id="active-op-section">
+          <div class="section-title">Active Operation</div>
+          <div class="section-body" id="active-op-body">
+            <p class="empty-msg">No active operation.</p>
+          </div>
+        </div>
+
+        <div class="panel-section" id="debug-pane" style="display:none;border-color:var(--yellow)">
+          <div class="section-title" style="color:var(--yellow)">Debug — Step Paused</div>
+          <div class="section-body" id="debug-pane-body">
+            <p class="muted-text" style="margin-bottom:12px">Plan is paused on step. Review the active operation above, then confirm to continue.</p>
+            <button id="btn-ack" class="btn btn-success">Confirm Step (ACK)</button>
+          </div>
+        </div>
+
+        <div class="panel-section" style="margin-top:12px">
+          <div class="section-title">Workcell Controls</div>
+          <div class="section-body">
+            <div class="workcell-indicators">
+              <span id="estop-ind" class="indicator active-ind" title="Click to toggle E-Stop">
+                <span class="ind-dot"></span>E-Stop OK
+              </span>
+              <span id="conveyor-ind" class="indicator active-ind" title="Click to toggle conveyor">
+                <span class="ind-dot"></span>Conveyor Running
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section" style="margin-top:12px">
+          <div class="section-title">Event Log</div>
+          <div class="section-body" style="padding:0">
+            <div class="log-scroll" id="plan-log"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Panel: Export ────────────────────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-export">
+    <div class="panel-section">
+      <div class="section-title">Plan Export &amp; Management</div>
+      <div class="section-body">
+        <div class="btn-row" style="margin-bottom:16px">
+          <button id="btn-export-plan" class="btn btn-primary">Export Current Plan</button>
+          <button id="btn-refresh-plans" class="btn">Refresh List</button>
+        </div>
+        <div id="export-message" style="margin-bottom:12px;font-size:12px;color:var(--green);display:none"></div>
+        <div class="section-subtitle" style="margin-bottom:8px">Saved Plans</div>
+        <div id="plans-table-wrap">
+          <table class="data-table" id="plans-table">
+            <thead>
+              <tr>
+                <th>Plan ID</th>
+                <th>Mode</th>
+                <th>Status</th>
+                <th>Steps</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="plans-tbody">
+              <tr><td colspan="6" class="empty-msg">No plans saved yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Panel: Visualize ─────────────────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-visualize">
+    <nav class="sub-tab-bar">
+      <button class="sub-tab-btn active" data-subtab="diagram">Diagram</button>
+      <button class="sub-tab-btn" data-subtab="stats">Stats</button>
+      <button class="sub-tab-btn" data-subtab="log">Execution Log</button>
+    </nav>
+
+    <div class="sub-tab-panel active" id="subtab-diagram">
+      <div class="panel-section">
+        <div class="section-title">
+          Sequence Diagram
+          <button id="btn-refresh-diagram" class="btn" style="font-size:11px;padding:2px 10px;margin-left:10px">Refresh</button>
+        </div>
+        <div class="section-body">
+          <div id="diagram-container" class="diagram-container">
+            <p class="empty-msg">Load a plan to generate the sequence diagram.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-tab-panel" id="subtab-stats">
+      <div class="panel-section">
+        <div class="section-title">
+          Aggregate Statistics
+          <button id="btn-refresh-stats" class="btn" style="font-size:11px;padding:2px 10px;margin-left:10px">Refresh</button>
+        </div>
+        <div class="section-body">
+          <div id="stats-summary" class="stats-summary"></div>
+          <div class="charts-row">
+            <div class="chart-wrap">
+              <div class="section-subtitle" style="margin-bottom:8px">Robot Utilization</div>
+              <canvas id="chart-utilization" height="220"></canvas>
+            </div>
+            <div class="chart-wrap">
+              <div class="section-subtitle" style="margin-bottom:8px">Avg Score by Robot</div>
+              <canvas id="chart-scores" height="220"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-tab-panel" id="subtab-log">
+      <div class="panel-section">
+        <div class="section-title">
+          Execution History
+          <button id="btn-refresh-history" class="btn" style="font-size:11px;padding:2px 10px;margin-left:10px">Refresh</button>
+        </div>
+        <div class="section-body" style="padding:0">
+          <div id="history-table-wrap">
+            <table class="data-table" id="history-table">
+              <thead>
+                <tr><th>#</th><th>Plan ID</th><th>Mode</th><th>Status</th><th>Steps/Done/Fail</th><th>Started</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr><td colspan="7" class="empty-msg">No execution logs yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-content -->
 
 <script src="/static/app.js"></script>
 </body>
